@@ -4,7 +4,11 @@ from django.db import models
 class User(models.Model):
     public_key = models.CharField(max_length=128, unique=True, primary_key=True, blank=False, null=False)
     courses_in_progress = models.ManyToManyField('Course', related_name='users_in_progress', blank=True)
-    type_of_user = models.CharField(max_length=50, choices=[('Student'), ("Organization")], default='Student')
+    TYPE_CHOICES = [
+        ('Student', 'Student'),
+        ('Organization', 'Organization'),
+    ]
+    type_of_user = models.CharField(max_length=50, choices=TYPE_CHOICES, default='Student')
     name = models.CharField(max_length=100, blank=True, null=True)
 
 class Course(models.Model):
@@ -24,9 +28,16 @@ class Module(models.Model):
 class Section(models.Model):
     section_id = models.AutoField(primary_key=True, blank=False, null=False)
     module_id = models.ForeignKey('Module', on_delete=models.CASCADE, related_name='sections', blank=True, null=True)
-    type_of_section = models.CharField(max_length=50, choices=[('MCQ'), ("Info_panel"), ("Coding_problem")], default='MCQ')
+    SECTION_TYPES = [
+        ('MCQ', 'Multiple Choice Question'),
+        ('Info_panel', 'Information Panel'),
+        ('Coding_problem', 'Coding Problem'),
+        ('Video', 'Video'),
+        ('Blank', 'Blank'),
+    ]
+    type_of_section = models.CharField(max_length=50, choices=SECTION_TYPES, default='MCQ')
     class Meta:
-        order_with_respect_to = 'Module'
+        order_with_respect_to = 'module_id'
 
 class MCQ(models.Model):
     mcq_id = models.AutoField(primary_key=True, blank=False, null=False)
@@ -45,3 +56,14 @@ class Coding_problem(models.Model):
     section_id = models.ForeignKey('Section', on_delete=models.CASCADE, related_name='coding_problems', blank=True, null=True)
     description = models.TextField()
     test_cases = models.JSONField()
+
+class Video(models.Model):
+    video_id = models.AutoField(primary_key=True, blank=False, null=False)
+    section_id = models.ForeignKey('Section', on_delete=models.CASCADE, related_name='videos', blank=True, null=True)
+    url = models.URLField()
+
+class Blank(models.Model):
+    blank_id = models.AutoField(primary_key=True, blank=False, null=False)
+    section_id = models.ForeignKey('Section', on_delete=models.CASCADE, related_name='blanks', blank=True, null=True)
+    content = models.TextField()
+    answers = models.TextField()
