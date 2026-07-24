@@ -8,7 +8,7 @@ export default function Home() {
       <nav className="border-b bg-primary border-[#0B0E14] px-6 py-4">
         <div className="text-[#F8FAFC] max-w-6xl mx-auto flex justify-between items-center">
           <div className="font-mono font-bold text-2xl tracking-tight">
-            wwwEd
+            NFTeach
           </div>
           <div className="flex items-center gap-6 text-sm font-medium">
             <ConnectButtonCustom />
