@@ -16,15 +16,16 @@ export const authOptions: NextAuthConfig = {
       credentials: {
         message: { label: "Message", type: "text" },
         signature: { label: "Signature", type: "text" },
+        address: { label: "Address", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.message || !credentials?.signature) {
+        if (!credentials?.message || !credentials?.signature || !credentials?.address) {
           return null;
         }
 
         try {
           const response = await fetch(
-            `${process.env.DJANGO_API_URL}/api/auth/`,
+            `${process.env.DJANGO_API_URL}/web3/verify_signature/`,
             {
               method: "POST",
               headers: {
@@ -33,11 +34,14 @@ export const authOptions: NextAuthConfig = {
               body: JSON.stringify({
                 message: credentials.message,
                 signature: credentials.signature,
+                address: credentials.address,
               }),
             },
           );
 
           if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            console.error("Django auth failed:", errData);
             throw new Error("Failed to authenticate");
           }
 
@@ -45,7 +49,7 @@ export const authOptions: NextAuthConfig = {
 
           return {
             id: data.address,
-            accessToken: data.access_token,
+            address: data.address,
           };
         } catch (error) {
           console.error("Error authenticating user:", error);
@@ -60,13 +64,12 @@ export const authOptions: NextAuthConfig = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.accessToken = (user as { accessToken: string }).accessToken;
+        token.address = (user as { address: string }).address;
       }
       return token;
     },
     async session({ session, token }) {
-      (session as unknown as { accessToken: string }).accessToken =
-        token.accessToken as string;
+      (session as unknown as { address: string }).address = token.address as string;
       return session;
     },
   },
