@@ -44,7 +44,7 @@ function RainbowKitAuthProvider({ children }: { children: React.ReactNode }) {
 
         const address = rawAddress.toLowerCase();
 
-        try {
+        try { 
           const url = `https://wob3.onrender.com/web3/get_nonce/?address=${address}`;
           console.log(`📡 Fetching nonce from Django: ${url}`);
           
