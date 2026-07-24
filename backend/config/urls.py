@@ -19,6 +19,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("/", include("core.urls")),
-    path("/web3/", include("web3_integration.urls")),
+    path("", include("core.urls")),
+    path("web3/", include("web3_integration.urls")),
 ]
