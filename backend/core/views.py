@@ -7,3 +7,4 @@ from django.core.cache import cache
 def get_csrf_token(request):
     csrf_token = get_token(request)
     return render(request, 'csrf_token.html', {'csrf_token': csrf_token})
+

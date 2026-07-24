@@ -36,5 +36,11 @@ def verify_signature(request):
         return Response({"error": "signature mismatch"}, status=401)
 
 
+    
+    
+
+
+
+
 # then manually check nonce, domain, expiry yourself since siwe isn't parsing the message for you
 # Create your views here.
