@@ -2,7 +2,7 @@ import { ConnectButtonCustom } from "../features/auth/connect-button";
 import Footer from "../components/layout/footer";
 
 // Just proof of concept could definitely split up some things like the header or the footer into different files
-export default function Home() { 
+export default function Home() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0B0E14] font-sans antialiased selection:bg-[#F59E0B] selection:text-[#0B0E14]">
       <nav className="border-b bg-primary border-[#0B0E14] px-6 py-4">
