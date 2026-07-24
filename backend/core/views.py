@@ -127,21 +127,32 @@ def course_detail(request, course_id):
         course.delete()
         return Response({'message': 'Course deleted'}, status=204)
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def course_modules(request, course_id):
     """
-    GET /courses/<course_id>/modules/  — List all modules for a course.
+    GET  /courses/<course_id>/modules/  — List all modules for a course.
+    POST /courses/<course_id>/modules/  — Create a new module.
 
-    Returns 404 if the course does not exist.
+    POST body:
+        title (str): Title of the module.
     """
     try:
         course = Course.objects.get(course_id=course_id)
     except Course.DoesNotExist:
         return Response({'error': 'Course not found'}, status=404)
 
-    modules = course.modules.all()
-    serializer = ModuleSerializer(modules, many=True)
-    return Response(serializer.data)
+    if request.method == 'GET':
+        modules = course.modules.all()
+        serializer = ModuleSerializer(modules, many=True)
+        return Response(serializer.data)
+
+    if request.method == 'POST':
+        serializer = ModuleSerializer(data=request.data)
+        if serializer.is_valid():
+            # Save with the specific course linked automatically
+            serializer.save(course_id=course)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
 
 
 @api_view(['PATCH', 'DELETE'])
