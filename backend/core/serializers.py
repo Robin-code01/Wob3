@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from .models import Course, User
 
+class EnrollSerializer(serializers.Serializer):
+    course_id = serializers.IntegerField()
+    public_key = serializers.CharField()
 
 class CourseSerializer(serializers.ModelSerializer):
     # Return the creator's public key as a readable field
