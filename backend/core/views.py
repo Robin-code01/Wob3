@@ -290,11 +290,10 @@ def submit_answer(request, section_id):
     POST body:
         public_key  (str): The user's public key.
         user_answer (str): The answer provided by the user.
-        is_correct  (int): 0 or 1 (the frontend evaluates this based on the section's correct_answer).
+        is_correct  (int): Only used as a fallback for Coding_problem.
     """
     public_key = request.data.get('public_key')
     user_answer = request.data.get('user_answer')
-    is_correct = request.data.get('is_correct', 0)
 
     if not public_key or user_answer is None:
         return Response({'error': 'public_key and user_answer are required'}, status=400)
@@ -309,13 +308,33 @@ def submit_answer(request, section_id):
     except Section.DoesNotExist:
         return Response({'error': 'Section not found'}, status=404)
 
+    is_correct = 0
+
+    # Backend verification
+    if section.type_of_section == 'MCQ':
+        mcq = section.mcqs.first()
+        if mcq and str(user_answer).strip().lower() == str(mcq.correct_answer).strip().lower():
+            is_correct = 1
+    elif section.type_of_section == 'Blank':
+        blank = section.blanks.first()
+        if blank and str(user_answer).strip().lower() == str(blank.answers).strip().lower():
+            is_correct = 1
+    elif section.type_of_section == 'Coding_problem':
+        # TODO: Implement a secure backend code execution engine to run test cases.
+        # For now, we fallback to trusting the frontend for Coding Problems only.
+        is_correct = int(request.data.get('is_correct', 0))
+    else:
+        # For Info_panel and Video, answering doesn't necessarily have a "correct" state,
+        # but if we consider simply viewing it as correct:
+        is_correct = 1
+
     # Upsert the answer
     answer, created = Answer.objects.update_or_create(
         user_id=user,
         section_id=section,
         defaults={
             'user_answer': str(user_answer),
-            'is_correct': int(is_correct)
+            'is_correct': is_correct
         }
     )
 
