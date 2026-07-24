@@ -1,8 +1,7 @@
 import re
 import secrets
 
-from django.contrib.auth import login
-from core.models import User
+from django.contrib.auth import get_user_model, login
 from django.core.cache import cache
 from eth_account import Account
 from eth_account.messages import encode_defunct
@@ -74,10 +73,8 @@ def verify_signature(request):
     # 3. Nonce is valid — burn it immediately so it can't be replayed
     cache.delete(f"siwe_nonce:{address}")
 
-    if not User.objects.filter(public_address=recovered).exists():
-        user = User.objects.create(
-            public_key=recovered
-            )
-        user.save()
+    UserModel = get_user_model()
+    user, _ = UserModel.objects.get_or_create(public_key=recovered)
+    login(request, user)
 
     return Response({"ok": True, "address": address})

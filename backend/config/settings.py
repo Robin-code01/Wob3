@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     "web3_integration",
 ]
 
+AUTH_USER_MODEL = "core.User"
+
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",  # add near the top
     "django.middleware.common.CommonMiddleware",
