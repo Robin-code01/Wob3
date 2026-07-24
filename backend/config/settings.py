@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import json
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -37,11 +38,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "corsheaders",
     "rest_framework",
+    "corsheaders",
     "core",
     "web3_integration",
 ]
+
+AUTH_USER_MODEL = "core.User"
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -125,4 +128,47 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://your-frontend-domain.vercel.app",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
+
+import os
+
+WEB3_PROVIDER_URL = os.getenv("WEB3_PROVIDER_URL", "http://127.0.0.1:8545")
+COURSE_MODULE_SOULBOUND_ADDRESS = os.getenv("COURSE_MODULE_SOULBOUND_ADDRESS")
+OWNER_ADDRESS = os.getenv("OWNER_ADDRESS")
+OWNER_PRIVATE_KEY = os.getenv("OWNER_PRIVATE_KEY")
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    "Access-Control-Allow-Origin",
+]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://\w+\.vercel\.app$",
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+# ABI_PATH = Path(__file__).resolve().parent.parent.parent / "contract" / "out" / "MintPartialSoulboundNFT.sol" / "CourseModuleSoulbound.json"
+# COURSE_MODULE_SOULBOUND_ABI = json.loads(ABI_PATH.read_text())["abi"]
+# COURSE_MODULE_SOULBOUND_ABI = json.loads(ABI_PATH.read_text())["abi"]
+# COURSE_MODULE_SOULBOUND_ABI = json.loads(ABI_PATH.read_text())["abi"]
