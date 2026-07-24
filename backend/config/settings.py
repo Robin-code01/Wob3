@@ -128,7 +128,6 @@ STATIC_URL = "static/"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://your-frontend-domain.vercel.app",
-    "*"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
