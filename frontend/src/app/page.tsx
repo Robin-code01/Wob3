@@ -1,4 +1,5 @@
 import { ConnectButtonCustom } from "../features/auth/connect-button";
+import Footer from "../components/layout/footer";
 
 // Just proof of concept could definitely split up some things like the header or the footer into different files
 export default function Home() {
@@ -63,11 +64,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="text-center border-t border-[#0B0E14] py-8 text-xs font-mono text-slate-600">
-        <div className="max-w-6xl mx-auto px-6 flex justify-between items-center">
-          <div>wwwEd - Decentralized Education Verification</div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
