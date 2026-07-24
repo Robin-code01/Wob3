@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, User
+from .models import Course, User, Module
 
 class EnrollSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
@@ -28,3 +28,10 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_companies_interested_count(self, obj):
         return obj.companies_interested.count()
+
+
+class ModuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Module
+        fields = ['module_id', 'title', 'course_id']
+        read_only_fields = ['module_id', 'course_id']

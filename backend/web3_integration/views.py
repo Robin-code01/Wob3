@@ -36,8 +36,8 @@ def verify_signature(request):
     if recovered != claimed_address.lower():
         return Response({"error": "signature mismatch"}, status=401)
 
-    if not Users.objects.filter(plugin_address=recovered).exists():
-        user = Users.objects.create(
+    if not User.objects.filter(public_address=recovered).exists():
+        user = User.objects.create(
             public_key=recovered
             )
         user.save()
