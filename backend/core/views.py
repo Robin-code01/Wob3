@@ -4,8 +4,13 @@ from django.middleware.csrf import get_token
 from rest_framework.decorators import api_view
 from django.core.cache import cache
 from rest_framework.response import Response
-from .models import Course, User, Module
-from .serializers import CourseSerializer, EnrollSerializer, ModuleSerializer
+from .models import Course, User, Module, Section, MCQ, Info_panel, Coding_problem, Video, Blank, Answer
+from .serializers import (
+    CourseSerializer, EnrollSerializer, ModuleSerializer,
+    SectionSerializer, MCQSerializer, InfoPanelSerializer,
+    CodingProblemSerializer, VideoSerializer, BlankSerializer,
+    AnswerSerializer
+)
 from django.core.cache import cache
 
 @api_view(['GET'])
@@ -163,3 +168,145 @@ def module_detail(request, module_id):
     if request.method == 'DELETE':
         module.delete()
         return Response({'message': 'Module deleted'}, status=204)
+
+
+@api_view(['GET', 'POST'])
+def module_sections(request, module_id):
+    """
+    GET  /modules/<module_id>/sections/  — List all sections in a module.
+    POST /modules/<module_id>/sections/  — Create a new section and its content.
+
+    POST body:
+        type_of_section (str): e.g., 'MCQ', 'Info_panel', 'Video', 'Coding_problem', 'Blank'
+        + all fields required for that specific type (e.g., 'question', 'options', 'correct_answer' for MCQ)
+    """
+    try:
+        module = Module.objects.get(module_id=module_id)
+    except Module.DoesNotExist:
+        return Response({'error': 'Module not found'}, status=404)
+
+    if request.method == 'GET':
+        sections = module.sections.all()
+        serializer = SectionSerializer(sections, many=True)
+        return Response(serializer.data)
+
+    if request.method == 'POST':
+        section_type = request.data.get('type_of_section')
+        if section_type not in dict(Section.SECTION_TYPES):
+            return Response({'error': 'Invalid or missing type_of_section'}, status=400)
+
+        # Create the section shell
+        section = Section.objects.create(module_id=module, type_of_section=section_type)
+
+        # Dispatch to the correct serializer for the content
+        serializer_map = {
+            'MCQ': MCQSerializer,
+            'Info_panel': InfoPanelSerializer,
+            'Coding_problem': CodingProblemSerializer,
+            'Video': VideoSerializer,
+            'Blank': BlankSerializer
+        }
+        
+        content_serializer_class = serializer_map[section_type]
+        content_serializer = content_serializer_class(data=request.data)
+        
+        if content_serializer.is_valid():
+            content_serializer.save(section_id=section)
+            # Return the combined section object
+            return Response(SectionSerializer(section).data, status=201)
+        
+        # If content validation fails, delete the section shell to avoid orphans
+        section.delete()
+        return Response(content_serializer.errors, status=400)
+
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+def section_detail(request, section_id):
+    """
+    GET    /sections/<section_id>/  — Get a single section.
+    PATCH  /sections/<section_id>/  — Edit a section's content.
+    DELETE /sections/<section_id>/  — Delete a section.
+    """
+    try:
+        section = Section.objects.get(section_id=section_id)
+    except Section.DoesNotExist:
+        return Response({'error': 'Section not found'}, status=404)
+
+    if request.method == 'GET':
+        return Response(SectionSerializer(section).data)
+
+    if request.method == 'DELETE':
+        section.delete()
+        return Response({'message': 'Section deleted'}, status=204)
+
+    if request.method == 'PATCH':
+        # Retrieve the specific child object
+        child = None
+        serializer_class = None
+        
+        if section.type_of_section == 'MCQ':
+            child = section.mcqs.first()
+            serializer_class = MCQSerializer
+        elif section.type_of_section == 'Info_panel':
+            child = section.info_panels.first()
+            serializer_class = InfoPanelSerializer
+        elif section.type_of_section == 'Coding_problem':
+            child = section.coding_problems.first()
+            serializer_class = CodingProblemSerializer
+        elif section.type_of_section == 'Video':
+            child = section.videos.first()
+            serializer_class = VideoSerializer
+        elif section.type_of_section == 'Blank':
+            child = section.blanks.first()
+            serializer_class = BlankSerializer
+            
+        if not child:
+            return Response({'error': 'Section content not found'}, status=404)
+            
+        content_serializer = serializer_class(child, data=request.data, partial=True)
+        if content_serializer.is_valid():
+            content_serializer.save()
+            return Response(SectionSerializer(section).data)
+            
+        return Response(content_serializer.errors, status=400)
+
+
+@api_view(['POST'])
+def submit_answer(request, section_id):
+    """
+    POST /sections/<section_id>/answer/  — Submit an answer for a section.
+
+    POST body:
+        public_key  (str): The user's public key.
+        user_answer (str): The answer provided by the user.
+        is_correct  (int): 0 or 1 (the frontend evaluates this based on the section's correct_answer).
+    """
+    public_key = request.data.get('public_key')
+    user_answer = request.data.get('user_answer')
+    is_correct = request.data.get('is_correct', 0)
+
+    if not public_key or user_answer is None:
+        return Response({'error': 'public_key and user_answer are required'}, status=400)
+
+    try:
+        user = User.objects.get(public_key=public_key.lower())
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+    try:
+        section = Section.objects.get(section_id=section_id)
+    except Section.DoesNotExist:
+        return Response({'error': 'Section not found'}, status=404)
+
+    # Upsert the answer
+    answer, created = Answer.objects.update_or_create(
+        user_id=user,
+        section_id=section,
+        defaults={
+            'user_answer': str(user_answer),
+            'is_correct': int(is_correct)
+        }
+    )
+
+    return Response(AnswerSerializer(answer).data, status=201 if created else 200)
+

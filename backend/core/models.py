@@ -67,3 +67,16 @@ class Blank(models.Model):
     section_id = models.ForeignKey('Section', on_delete=models.CASCADE, related_name='blanks', blank=True, null=True)
     content = models.TextField()
     answers = models.TextField()
+
+
+class Answer(models.Model):
+    answer_id = models.AutoField(primary_key=True)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='answers')
+    section_id = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='answers')
+    is_correct = models.IntegerField(choices=[(0, 'Incorrect'), (1, 'Correct')], default=0)
+    user_answer = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # A user can only have one active answer per section
+        unique_together = ('user_id', 'section_id')

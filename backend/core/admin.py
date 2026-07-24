@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     User, Course, Module, Section,
-    MCQ, Info_panel, Coding_problem, Video, Blank
+    MCQ, Info_panel, Coding_problem, Video, Blank, Answer
 )
 
 
@@ -104,3 +104,10 @@ class VideoAdmin(admin.ModelAdmin):
 class BlankAdmin(admin.ModelAdmin):
     list_display = ['blank_id', 'section_id']
     search_fields = ['content']
+
+
+@admin.register(Answer)
+class AnswerAdmin(admin.ModelAdmin):
+    list_display = ['answer_id', 'user_id', 'section_id', 'is_correct', 'created_at']
+    list_filter = ['is_correct', 'created_at']
+    search_fields = ['user_answer']
