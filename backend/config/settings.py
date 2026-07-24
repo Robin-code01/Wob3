@@ -165,6 +165,8 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://\w+\.vercel\.app$",
 ]
 
+CORS_ALLOW_ALL_ORIGINS = True
+
 # ABI_PATH = Path(__file__).resolve().parent.parent.parent / "contract" / "out" / "MintPartialSoulboundNFT.sol" / "CourseModuleSoulbound.json"
 # COURSE_MODULE_SOULBOUND_ABI = json.loads(ABI_PATH.read_text())["abi"]
 # COURSE_MODULE_SOULBOUND_ABI = json.loads(ABI_PATH.read_text())["abi"]
