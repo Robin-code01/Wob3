@@ -1,11 +1,19 @@
-import "@rainbow-me/rainbowkit/styles.css";
+"use client";
+
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import { mainnet, polygon, optimism, arbitrum, base } from "wagmi/chains";
+import {
+  mainnet,
+  polygon,
+  optimism,
+  arbitrum,
+  base,
+  sepolia,
+} from "wagmi/chains";
 
 const config = getDefaultConfig({
   appName: "My RainbowKit App",
   projectId: "YOUR_PROJECT_ID",
-  chains: [mainnet, polygon, optimism, arbitrum, base],
+  chains: [mainnet, polygon, optimism, arbitrum, base, sepolia],
   ssr: true, // If your dApp uses server side rendering (SSR)
 });
 
