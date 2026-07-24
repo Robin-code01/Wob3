@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
     "core",
     "web3_integration",
 ]
@@ -122,4 +123,35 @@ STATIC_URL = "static/"
 
 CORS_ALLOWED_ORIGINS = [
     "*", "http://localhost:3000",  # wherever frontend runs
+    "https://your-frontend-domain.vercel.app/", 
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+import os
+
+WEB3_PROVIDER_URL = os.getenv("WEB3_PROVIDER_URL", "http://127.0.0.1:8545")
+COURSE_MODULE_SOULBOUND_ADDRESS = os.getenv("COURSE_MODULE_SOULBOUND_ADDRESS")
+OWNER_ADDRESS = os.getenv("OWNER_ADDRESS")
+OWNER_PRIVATE_KEY = os.getenv("OWNER_PRIVATE_KEY")
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
 ]

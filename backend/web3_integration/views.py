@@ -2,13 +2,22 @@ import re
 import secrets
 
 from django.contrib.auth import login
-from django.contrib.auth.models import User
+from core.models import User
 from django.core.cache import cache
 from eth_account import Account
 from eth_account.messages import encode_defunct
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from web3 import Web3
+from django.conf import settings
+
+w3 = Web3(Web3.HTTPProvider(settings.WEB3_PROVIDER_URL))
+
+contract = w3.eth.contract(
+    address=settings.COURSE_MODULE_SOULBOUND_ADDRESS,
+    abi=settings.COURSE_MODULE_SOULBOUND_ABI,
+)
 
 def recover_signer(message: str, signature: str) -> str:
     encoded = encode_defunct(text=message)
@@ -65,8 +74,10 @@ def verify_signature(request):
     # 3. Nonce is valid — burn it immediately so it can't be replayed
     cache.delete(f"siwe_nonce:{address}")
 
-    # 4. Signature + nonce both check out — log the user in
-    user, _ = User.objects.get_or_create(username=address)
-    login(request, user)
+    if not User.objects.filter(public_address=recovered).exists():
+        user = User.objects.create(
+            public_key=recovered
+            )
+        user.save()
 
     return Response({"ok": True, "address": address})
