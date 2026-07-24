@@ -15,12 +15,6 @@ def recover_signer(message: str, signature: str) -> str:
     recovered_address = Account.recover_message(encoded, signature=signature)
     return recovered_address.lower()
 
-
-@api_view(['GET'])
-def get_csrf_token(request):
-    csrf_token = get_token(request)
-    return render(request, 'csrf_token.html', {'csrf_token': csrf_token})
-
 @api_view(["GET"])
 def get_nonce(request):
     address = request.query_params.get("address")
