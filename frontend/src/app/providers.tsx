@@ -18,7 +18,7 @@ import { createSiweMessage } from "viem/siwe";
 const queryClient = new QueryClient();
 
 function RainbowKitAuthProvider({ children }: { children: React.ReactNode }) {
-  const { status: sessionStatus, data: session } = useSession();
+  const { status: sessionStatus } = useSession();
   const { address: connectedAddress } = useAccount();
   const [authStatus, setAuthStatus] = useState<AuthenticationStatus>("unauthenticated");
 
@@ -33,24 +33,42 @@ function RainbowKitAuthProvider({ children }: { children: React.ReactNode }) {
       // 1. Fetch nonce from Django API
       getNonce: async () => {
         console.log("➡️ [1/3] RainbowKit getNonce triggered");
-        const address = connectedAddress || getAccount(config).address;
+        const rawAddress = connectedAddress || getAccount(config).address;
 
-        if (!address) {
+        if (!rawAddress) {
           console.error("❌ getNonce error: Wallet address is not available yet.");
           throw new Error("Wallet not connected");
         }
 
+        const address = rawAddress.toLowerCase();
+
         try {
           const url = `https://wob3.onrender.com/web3/get_nonce/?address=${address}`;
-          const response = await fetch(url);
-          const data = await response.json();
+          console.log(`📡 Fetching nonce from Django: ${url}`);
+          
+          const response = await fetch(url, {
+            headers: { "Accept": "application/json" },
+          });
+          const text = await response.text();
+          console.log("📡 Nonce response status:", response.status, "body:", text);
 
           if (!response.ok) {
-            throw new Error(data?.detail || data?.error || "Failed to fetch nonce");
+            throw new Error(`Failed to fetch nonce (${response.status}): ${text}`);
           }
 
-          const nonce = typeof data === "string" ? data : data.nonce || data.detail;
-          console.log("Fetched Nonce:", nonce);
+          let data: any;
+          try {
+            data = JSON.parse(text);
+          } catch {
+            data = text;
+          }
+
+          const nonce = typeof data === "string" ? data : data.nonce || data.detail || data.result;
+          if (!nonce) {
+            throw new Error("Nonce missing in Django response");
+          }
+
+          console.log("✅ Fetched Nonce:", nonce);
           return nonce;
         } catch (err) {
           console.error("❌ Error in getNonce:", err);
@@ -58,7 +76,7 @@ function RainbowKitAuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
 
-      // 2. Format as EIP-4361 SIWE message containing 'Nonce: <nonce>'
+      // 2. Format as EIP-4361 SIWE message
       createMessage: ({ nonce, address, chainId }) => {
         console.log("➡️ [2/3] RainbowKit createMessage triggered with nonce:", nonce);
         return createSiweMessage({
@@ -72,18 +90,22 @@ function RainbowKitAuthProvider({ children }: { children: React.ReactNode }) {
         });
       },
 
-      // 3. Verify signature with Django via NextAuth
+      // 3. Verify signature via NextAuth -> Django
       verify: async ({ message, signature }) => {
         console.log("➡️ [3/3] RainbowKit verify triggered");
 
-        const address = connectedAddress || getAccount(config).address;
+        const rawAddress = connectedAddress || getAccount(config).address;
 
-        if (!address) {
+        if (!rawAddress) {
+          console.error("❌ Verify failed: Wallet address unavailable");
           setAuthStatus("unauthenticated");
           return false;
         }
 
+        const address = rawAddress.toLowerCase();
+
         try {
+          console.log("🔄 Triggering NextAuth signIn for address:", address);
           const result = await signIn("credentials", {
             message,
             signature,
@@ -93,12 +115,13 @@ function RainbowKitAuthProvider({ children }: { children: React.ReactNode }) {
 
           if (result?.error) {
             console.error("❌ NextAuth Authentication Failed:", result.error);
+            console.error("💡 Check your Next.js server terminal logs to see Django's exact response status and body!");
             setAuthStatus("unauthenticated");
             return false;
           }
 
           const authenticated = Boolean(result?.ok);
-          console.log("Is Authenticated:", authenticated);
+          console.log("✅ NextAuth Authentication Result:", authenticated);
           setAuthStatus(authenticated ? "authenticated" : "unauthenticated");
           return authenticated;
         } catch (err) {

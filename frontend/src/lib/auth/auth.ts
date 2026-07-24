@@ -13,35 +13,59 @@ export const authOptions: NextAuthConfig = {
       },
       async authorize(credentials) {
         if (!credentials?.message || !credentials?.signature || !credentials?.address) {
+          console.error("❌ [NextAuth Authorize] Missing credentials fields");
           return null;
         }
 
+        const normalizedAddress = (credentials.address as string).toLowerCase();
+
         try {
+          console.log("➡️ [NextAuth Server] Posting signature verification to Django:", normalizedAddress);
+
           const response = await fetch("https://wob3.onrender.com/web3/verify_signature/", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              "Accept": "application/json",
             },
             body: JSON.stringify({
               message: credentials.message,
               signature: credentials.signature,
-              address: credentials.address,
+              address: normalizedAddress,
             }),
           });
 
+          const responseText = await response.text();
+          console.log(`📡 [Django Status]: ${response.status}`);
+          console.log(`📡 [Django Body]:`, responseText);
+
           if (!response.ok) {
-            console.error("Backend verification failed:", await response.text());
+            console.error(`❌ [Django Error ${response.status}]:`, responseText);
             return null;
           }
 
-          const data = await response.json();
+          let data: Record<string, any> = {};
+          try {
+            data = JSON.parse(responseText);
+          } catch {
+            console.warn("⚠️ Could not parse Django response as JSON, raw text stored.");
+          }
+
+          // Support SimpleJWT ('access'), dj-rest-auth ('access_token' or 'key'), or Knox ('token')
+          const accessToken =
+            data.access_token ||
+            data.access ||
+            data.token ||
+            data.key ||
+            data.jwt ||
+            null;
 
           return {
-            id: credentials.address as string,
-            accessToken: data.access_token || data.token || null,
+            id: normalizedAddress,
+            accessToken,
           };
         } catch (error) {
-          console.error("Error authenticating user:", error);
+          console.error("❌ [NextAuth Server] Error fetching from Django:", error);
           return null;
         }
       },
@@ -55,12 +79,18 @@ export const authOptions: NextAuthConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.accessToken = (user as { accessToken: string }).accessToken;
+        token.sub = user.id;
       }
       return token;
     },
     async session({ session, token }) {
-      (session as unknown as { accessToken: string }).accessToken =
-        token.accessToken as string;
+      if (token) {
+        (session as unknown as { accessToken: string }).accessToken =
+          token.accessToken as string;
+        if (session.user) {
+          session.user.id = token.sub as string;
+        }
+      }
       return session;
     },
   },
