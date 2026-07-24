@@ -1,11 +1,10 @@
 import { ConnectButtonCustom } from "../features/auth/connect-button";
-import React from 'react';
 
 // Just proof of concept could definitely split up some things like the header or the footer into different files
 export default function Home() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0B0E14] font-sans antialiased selection:bg-[#F59E0B] selection:text-[#0B0E14]">
-      <nav className="border-b bg-[#E11D48] border-[#0B0E14] px-6 py-4">
+      <nav className="border-b bg-primary border-[#0B0E14] px-6 py-4">
         <div className="text-[#F8FAFC] max-w-6xl mx-auto flex justify-between items-center">
           <div className="font-mono font-bold text-2xl tracking-tight">
             wwwEd
@@ -38,7 +37,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-6">
             <div className="p-6 border border-[#0B0E14] bg-white">
-              <div className="font-mono text-xl font-bold text-[#E11D48] mb-2">01</div>
+              <div className="font-mono text-xl font-bold text-primary mb-2">01</div>
               <h3 className="font-bold text-lg mb-2">Sign In with your wallet</h3>
               <p className="text-sm text-slate-600 leading-relaxed">
                 Connect your web3 wallet to establish your identity. No bloated accounts or passwords needed.
@@ -46,7 +45,7 @@ export default function Home() {
             </div>
 
             <div className="p-6 border border-[#0B0E14] bg-white">
-              <div className="font-mono text-xl font-bold text-[#E11D48] mb-2">02</div>
+              <div className="font-mono text-xl font-bold text-primary mb-2">02</div>
               <h3 className="font-bold text-lg mb-2">Complete Modules</h3>
               <p className="text-sm text-slate-600 leading-relaxed">
                 Complete education modules. Once passed, mint an untransferable certification.
@@ -54,7 +53,7 @@ export default function Home() {
             </div>
 
             <div className="p-6 border border-[#0B0E14] bg-white">
-              <div className="font-mono text-xl font-bold text-[#E11D48] mb-2">03</div>
+              <div className="font-mono text-xl font-bold text-primary mb-2">03</div>
               <h3 className="font-bold text-lg mb-2">Verify Yourself</h3>
               <p className="text-sm text-slate-600 leading-relaxed">
                 Use your certifications as proof for the workplace, for your education, and more.

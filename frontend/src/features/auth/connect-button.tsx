@@ -1,6 +1,7 @@
 "use client";
 
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import Image from "next/image";
 
 export function ConnectButtonCustom() {
   return (
@@ -14,18 +15,18 @@ export function ConnectButtonCustom() {
         authenticationStatus,
         mounted,
       }) => {
-        const ready = mounted && authenticationStatus !== 'loading';
+        const ready = mounted && authenticationStatus !== "loading";
         const connected =
           ready &&
           account &&
           chain &&
-          (!authenticationStatus || authenticationStatus === 'authenticated');
+          (!authenticationStatus || authenticationStatus === "authenticated");
 
         return (
           <div
             {...(!ready && {
-              'aria-hidden': true,
-              className: 'opacity-0 pointer-events-none user-select-none',
+              "aria-hidden": true,
+              className: "opacity-0 pointer-events-none user-select-none",
             })}
           >
             {(() => {
@@ -34,7 +35,7 @@ export function ConnectButtonCustom() {
                   <button
                     onClick={openConnectModal}
                     type="button"
-                    className="h-9 bg-[#F8FAFC] text-[#0B0E14] hover:bg-[#0B0E14] hover:text-[#F8FAFC] transition-colors border border-[#0B0E14] px-4 py-2 font-mono text-xs font-semibold"
+                    className="h-9 bg-[#F8FAFC] text-[#0B0E14] hover:bg-[#0B0E14] hover:text-[#F8FAFC] transition-colors border border-[#0B0E14] px-4 py-2 font-mono text-xs font-semibold hover:cursor-pointer"
                   >
                     Connect Wallet
                   </button>
@@ -46,7 +47,7 @@ export function ConnectButtonCustom() {
                   <button
                     onClick={openChainModal}
                     type="button"
-                    className="h-9 bg-[#E11D48] text-[#0B0E14] transition-colors border border-[#0B0E14] px-4 py-2 font-mono text-xs font-semibold"
+                    className="h-9 bg-primary text-[#0B0E14] transition-colors border border-[#0B0E14] px-4 py-2 font-mono text-xs font-semibold"
                   >
                     Wrong network
                   </button>
@@ -66,8 +67,8 @@ export function ConnectButtonCustom() {
                         style={{ background: chain.iconBackground }}
                       >
                         {chain.iconUrl && (
-                          <img
-                            alt={chain.name ?? 'Chain icon'}
+                          <Image
+                            alt={chain.name ?? "Chain icon"}
                             src={chain.iconUrl}
                             className="w-5 h-5"
                           />
@@ -85,7 +86,7 @@ export function ConnectButtonCustom() {
                     {account.displayName}
                     {account.displayBalance
                       ? ` (${account.displayBalance})`
-                      : ''}
+                      : ""}
                   </button>
                 </div>
               );
@@ -95,5 +96,4 @@ export function ConnectButtonCustom() {
       }}
     </ConnectButton.Custom>
   );
-};
-
+}
