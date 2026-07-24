@@ -1,7 +1,17 @@
+// src/app/page.tsx
+import { auth } from "@/lib/auth/auth";
+import { redirect } from "next/navigation";
 import AuthHeader from "@/components/layout/auth-header";
 import Footer from "@/components/layout/footer";
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
+  // If already logged in, send them straight to /home
+  if (session) {
+    redirect("/home");
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0B0E14] font-sans antialiased selection:bg-[#F59E0B] selection:text-[#0B0E14]">
       <AuthHeader />
@@ -12,9 +22,8 @@ export default function Home() {
             <h1 className="text-4xl sm:text-6xl font-extrabold tracking text-[#0B0E14] leading-[1.08]">
               Private, verifiable education. <br />
             </h1>
-
             <p className="mt-6 text-lg text-slate-700 leading-relaxed max-w-2xl">
-              Complete learning modules and receive tokens locked directly to your wallet address. They cannot be transferred, sold, or spoofed, giving employers and schools instantly verifiable proof.
+              Complete learning modules and receive tokens locked directly to your wallet address.
             </p>
           </div>
         </section>
