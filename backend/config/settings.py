@@ -128,6 +128,7 @@ STATIC_URL = "static/"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://your-frontend-domain.vercel.app",
+    "*"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -158,6 +159,10 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://\w+\.vercel\.app$",
 ]
 
 # ABI_PATH = Path(__file__).resolve().parent.parent.parent / "contract" / "out" / "MintPartialSoulboundNFT.sol" / "CourseModuleSoulbound.json"
