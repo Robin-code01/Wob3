@@ -2,7 +2,14 @@ import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
+const authSecret =
+  process.env.AUTH_SECRET ??
+  process.env.NEXTAUTH_SECRET ??
+  "dev-secret-change-me";
+
 export const authOptions: NextAuthConfig = {
+  trustHost: true,
+  secret: authSecret,
   providers: [
     Credentials({
       name: "Ethereum",
@@ -47,7 +54,6 @@ export const authOptions: NextAuthConfig = {
       },
     }),
   ],
-  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
   },
