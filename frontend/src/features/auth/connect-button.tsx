@@ -67,7 +67,7 @@ export function ConnectButtonCustom() {
                         style={{ background: chain.iconBackground }}
                       >
                         {chain.iconUrl && (
-                          <Image
+                          <img
                             alt={chain.name ?? "Chain icon"}
                             src={chain.iconUrl}
                             className="w-5 h-5"
