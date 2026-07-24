@@ -1,25 +1,14 @@
-import { ConnectButtonCustom } from "../features/auth/connect-button";
-import Footer from "../components/layout/footer";
+import AuthHeader from "@/components/layout/auth-header";
+import Footer from "@/components/layout/footer";
 
-// Just proof of concept could definitely split up some things like the header or the footer into different files
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0B0E14] font-sans antialiased selection:bg-[#F59E0B] selection:text-[#0B0E14]">
-      <nav className="border-b bg-primary border-[#0B0E14] px-6 py-4">
-        <div className="text-[#F8FAFC] max-w-6xl mx-auto flex justify-between items-center">
-          <div className="font-mono font-bold text-2xl tracking-tight">
-            NFTeach
-          </div>
-          <div className="flex items-center gap-6 text-sm font-medium">
-            <ConnectButtonCustom />
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0B0E14] font-sans antialiased selection:bg-[#F59E0B] selection:text-[#0B0E14]">
+      <AuthHeader />
 
-      <main className="max-w-6xl mx-auto px-6">
+      <main className="flex-1 max-w-6xl mx-auto px-6">
         <section className="pt-15">
-          <div className="">
-            
+          <div>
             <h1 className="text-4xl sm:text-6xl font-extrabold tracking text-[#0B0E14] leading-[1.08]">
               Private, verifiable education. <br />
             </h1>
@@ -27,7 +16,6 @@ export default function Home() {
             <p className="mt-6 text-lg text-slate-700 leading-relaxed max-w-2xl">
               Complete learning modules and receive tokens locked directly to your wallet address. They cannot be transferred, sold, or spoofed, giving employers and schools instantly verifiable proof.
             </p>
-
           </div>
         </section>
 

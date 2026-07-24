@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   RainbowKitProvider,
@@ -18,6 +19,7 @@ import { createSiweMessage } from "viem/siwe";
 const queryClient = new QueryClient();
 
 function RainbowKitAuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const { status: sessionStatus } = useSession();
   const { address: connectedAddress } = useAccount();
   const [authStatus, setAuthStatus] = useState<AuthenticationStatus>("unauthenticated");
@@ -90,7 +92,7 @@ function RainbowKitAuthProvider({ children }: { children: React.ReactNode }) {
         });
       },
 
-      // 3. Verify signature via NextAuth -> Django
+      // 3. Verify signature via NextAuth -> Django & Redirect to /home
       verify: async ({ message, signature }) => {
         console.log("➡️ [3/3] RainbowKit verify triggered");
 
@@ -123,6 +125,11 @@ function RainbowKitAuthProvider({ children }: { children: React.ReactNode }) {
           const authenticated = Boolean(result?.ok);
           console.log("✅ NextAuth Authentication Result:", authenticated);
           setAuthStatus(authenticated ? "authenticated" : "unauthenticated");
+
+          if (authenticated) {
+            router.push("/home");
+          }
+
           return authenticated;
         } catch (err) {
           console.error("❌ Error during verification:", err);
@@ -131,12 +138,14 @@ function RainbowKitAuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
 
+      // Sign out & Redirect back to landing page
       signOut: async () => {
         await signOut({ redirect: false });
         setAuthStatus("unauthenticated");
+        router.push("/");
       },
     });
-  }, [connectedAddress]);
+  }, [connectedAddress, router]);
 
   return (
     <RainbowKitAuthenticationProvider
