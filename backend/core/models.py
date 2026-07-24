@@ -1,8 +1,43 @@
 from django.db import models
+from django.contrib.auth.models import PermissionsMixin
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+
+
+class UserManager(BaseUserManager):
+    use_in_migrations = True
+
+    def create_user(self, public_key, password=None, **extra_fields):
+        if not public_key:
+            raise ValueError("The public_key must be set")
+        public_key = public_key.lower()
+        user = self.model(public_key=public_key, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, public_key, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
+
+        return self.create_user(public_key, password, **extra_fields)
+
 
 # Create your models here.
-class User(models.Model):
-    public_key = models.CharField(max_length=128, unique=True, primary_key=True, blank=False, null=False)
+class User(AbstractBaseUser, PermissionsMixin):
+    public_key = models.CharField(max_length=128, unique=True, primary_key=True)
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    USERNAME_FIELD = "public_key"
+    REQUIRED_FIELDS = []
+
+    objects = UserManager()
+
     courses_in_progress = models.ManyToManyField('Course', related_name='users_in_progress', blank=True)
     TYPE_CHOICES = [
         ('Student', 'Student'),
@@ -67,3 +102,16 @@ class Blank(models.Model):
     section_id = models.ForeignKey('Section', on_delete=models.CASCADE, related_name='blanks', blank=True, null=True)
     content = models.TextField()
     answers = models.TextField()
+
+
+class Answer(models.Model):
+    answer_id = models.AutoField(primary_key=True)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='answers')
+    section_id = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='answers')
+    is_correct = models.IntegerField(choices=[(0, 'Incorrect'), (1, 'Correct')], default=0)
+    user_answer = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # A user can only have one active answer per section
+        unique_together = ('user_id', 'section_id')
