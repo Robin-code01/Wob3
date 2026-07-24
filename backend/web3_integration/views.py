@@ -8,7 +8,7 @@ from django.middleware.csrf import get_token
 from rest_framework.decorators import api_view
 from django.core.cache import cache
 from rest_framework.response import Response
-from .models import Users
+from core.models import User
 
 
 def recover_signer(message: str, signature: str) -> str:

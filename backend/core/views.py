@@ -4,7 +4,7 @@ from django.middleware.csrf import get_token
 from rest_framework.decorators import api_view
 from django.core.cache import cache
 from rest_framework.response import Response
-from .models import Course
+from .models import Course, User
 from .serializers import CourseSerializer
 from django.core.cache import cache
 
@@ -36,3 +36,20 @@ def courses(request):
             serializer.save()
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
+
+@api_view(['GET'])
+def user_courses(request, public_key):
+    """
+    GET /users/<public_key>/courses/  — List all courses a user is currently doing.
+
+    Returns 404 if the user does not exist.
+    """
+    try:
+        user = User.objects.get(public_key=public_key.lower())
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+    courses_in_progress = user.courses_in_progress.all()
+    serializer = CourseSerializer(courses_in_progress, many=True)
+    return Response(serializer.data)
