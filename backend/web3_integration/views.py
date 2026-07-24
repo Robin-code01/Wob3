@@ -9,15 +9,15 @@ from eth_account.messages import encode_defunct
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from web3 import Web3
-from django.conf import settings
+# from web3 import Web3
+# from django.conf import settings
 
-w3 = Web3(Web3.HTTPProvider(settings.WEB3_PROVIDER_URL))
+# w3 = Web3(Web3.HTTPProvider(settings.WEB3_PROVIDER_URL))
 
-contract = w3.eth.contract(
-    address=settings.COURSE_MODULE_SOULBOUND_ADDRESS,
-    abi=settings.COURSE_MODULE_SOULBOUND_ABI,
-)
+# contract = w3.eth.contract(
+#     address=settings.COURSE_MODULE_SOULBOUND_ADDRESS,
+#     abi=settings.COURSE_MODULE_SOULBOUND_ABI,
+# )
 
 def recover_signer(message: str, signature: str) -> str:
     encoded = encode_defunct(text=message)
