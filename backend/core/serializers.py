@@ -9,6 +9,7 @@ class CourseSerializer(serializers.ModelSerializer):
     creator_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all()
     )
+    creator_name = serializers.CharField(source='creator_id.name', read_only=True)
     companies_interested_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -19,10 +20,11 @@ class CourseSerializer(serializers.ModelSerializer):
             'description',
             'outcomes',
             'creator_id',
+            'creator_name',
             'is_complete',
             'companies_interested_count',
         ]
-        read_only_fields = ['course_id', 'is_complete', 'companies_interested_count']
+        read_only_fields = ['course_id', 'is_complete', 'companies_interested_count', 'creator_name']
 
     def get_companies_interested_count(self, obj):
         return obj.companies_interested.count()
