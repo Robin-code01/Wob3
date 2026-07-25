@@ -4,6 +4,8 @@ interface QuizDetailProps {
 
 export default function QuizBox({ children }: QuizDetailProps) {
   return (
-    <div className="w-2xl bg-red-400 py-6 px-6 rounded-xl">{children}</div>
+    <div className="w-full max-w-2xl bg-white border border-[#0B0E14] p-6 sm:p-8 space-y-4">
+      {children}
+    </div>
   );
 }

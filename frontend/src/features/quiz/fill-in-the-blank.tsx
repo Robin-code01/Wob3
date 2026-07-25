@@ -25,9 +25,9 @@ export default function FillInTheBlankQuestion({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-white">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-[#0B0E14]">
       {/* Question Heading */}
-      {question && <h3 className="text-xl font-bold tracking-wide">{question}</h3>}
+      {question && <h3 className="text-lg font-bold text-[#0B0E14] leading-snug">{question}</h3>}
 
       {/* Input Field and Submit Button */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -37,12 +37,12 @@ export default function FillInTheBlankQuestion({
           onChange={(e) => setAnswer(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 px-4 py-3 rounded-lg border bg-primary/50 text-white placeholder:text-white/60 border-primary/50 focus:outline-none focus:bg-white focus:text-slate-900 focus:border-white focus:shadow-md transition-all font-medium text-base"
+          className="flex-1 px-4 py-3 border border-[#0B0E14] bg-white text-[#0B0E14] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B0E14] text-sm font-medium disabled:bg-slate-100 disabled:cursor-not-allowed"
         />
         <button
           type="submit"
           disabled={!answer.trim() || disabled}
-          className="px-6 py-3 bg-primary text-white font-mono text-xs font-bold uppercase tracking-wider border border-white/20 rounded-lg hover:bg-white hover:text-[#0B0E14] transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
+          className="h-11 px-6 bg-primary text-white font-mono text-xs font-bold uppercase tracking-wider border border-[#0B0E14] hover:bg-[#0B0E14] hover:text-[#F8FAFC] transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
         >
           Submit Answer
         </button>
