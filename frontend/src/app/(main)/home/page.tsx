@@ -121,7 +121,7 @@ export default async function HomePage() {
                   description={course.description}
                   src={getCourseImage(course, DEFAULT_IMAGES)}
                 />
-              );
+              ); 
             })}
           </div>
         ) : (
