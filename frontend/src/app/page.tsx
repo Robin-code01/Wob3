@@ -20,7 +20,7 @@ export default async function Home() {
         <section className="pt-15">
           <div>
             <h1 className="text-4xl sm:text-6xl font-extrabold tracking text-[#0B0E14] leading-[1.08]">
-              Private, verifiable education. <br />
+              Concrete, verifiable education. <br />
             </h1>
             <p className="mt-6 text-lg text-slate-700 leading-relaxed max-w-2xl">
               Complete learning modules and receive tokens locked directly to your wallet address.
