@@ -1,7 +1,13 @@
 import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import CourseCard from "@/components/card/course-card";
-import { getAllCourses, getEnrolledCourses, Course } from "@/lib/courses";
+import {
+  getAllCourses,
+  getEnrolledCourses,
+  getCourseModules,
+  checkModuleCompletion,
+  Course,
+} from "@/lib/courses";
 import Link from "next/link";
 
 const DEFAULT_IMAGES = [
@@ -57,6 +63,40 @@ export default async function HomePage() {
     getAllCourses(),
   ]);
 
+  // Determine completion status for each enrolled course
+  const enrolledWithStatus = await Promise.all(
+    enrolledCourses.map(async (course) => {
+      const courseId = course.course_id ?? course.id;
+      if (!courseId) return { course, isComplete: false };
+
+      const modules = await getCourseModules(courseId);
+      if (!modules || modules.length === 0) {
+        return { course, isComplete: false };
+      }
+
+      const completionChecks = await Promise.all(
+        modules.map(async (mod) => {
+          const modId = mod.module_id ?? mod.id;
+          if (!modId) return false;
+          const res = await checkModuleCompletion(modId, userAddress, accessToken);
+          return Boolean(res.is_complete);
+        })
+      );
+
+      const isComplete = completionChecks.length > 0 && completionChecks.every(Boolean);
+      return { course, isComplete };
+    })
+  );
+
+  // Separate active in-progress courses vs fully completed courses
+  const inProgressCourses = enrolledWithStatus
+    .filter((item) => !item.isComplete)
+    .map((item) => item.course);
+
+  const completedCourses = enrolledWithStatus
+    .filter((item) => item.isComplete)
+    .map((item) => item.course);
+
   return (
     <div className="py-10 space-y-12">
       {/* Welcome Header */}
@@ -86,9 +126,9 @@ export default async function HomePage() {
             Continue Learning
           </h2>
         </div>
-        {enrolledCourses.length > 0 ? (
+        {inProgressCourses.length > 0 ? (
           <div className="flex gap-6 overflow-x-auto py-2 px-1 -mx-1 scrollbar-thin">
-            {enrolledCourses.map((course, idx) => {
+            {inProgressCourses.map((course, idx) => {
               const courseId = course.course_id ?? course.id ?? idx;
               return (
                 <CourseCard
@@ -98,17 +138,20 @@ export default async function HomePage() {
                   author={formatAuthor(course.creator_id, course.author)}
                   description={course.description}
                   src={getCourseImage(course, DEFAULT_IMAGES)}
+                  actionText="Continue Learning →"
                 />
               );
             })}
           </div>
         ) : (
           <div className="p-8 border border-[#0B0E14] bg-white text-center">
-            <div className="font-mono text-xs font-bold uppercase tracking-widest text-primary mb-2">
-              0 Enrolled Courses
+            <div className="font-mono text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">
+              0 Active Courses
             </div>
             <p className="text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
-              You haven't enrolled in any courses yet.
+              {completedCourses.length > 0
+                ? "You've completed all your enrolled courses!"
+                : "You haven't enrolled in any active courses."}
             </p>
           </div>
         )}
@@ -125,6 +168,24 @@ export default async function HomePage() {
           <div className="flex gap-6 overflow-x-auto py-2 px-1 -mx-1 scrollbar-thin">
             {allCourses.map((course, idx) => {
               const courseId = course.course_id ?? course.id ?? idx;
+              
+              const isEnrolled = enrolledCourses.some((c) => {
+                const cId = c.course_id ?? c.id ?? c.course;
+                return String(cId) === String(courseId);
+              });
+
+              const isCompleted = completedCourses.some((c) => {
+                const cId = c.course_id ?? c.id ?? c.course;
+                return String(cId) === String(courseId);
+              });
+
+              let actionText = "Start Learning →";
+              if (isCompleted) {
+                actionText = "Review Course ✓";
+              } else if (isEnrolled) {
+                actionText = "Continue Learning →";
+              }
+
               return (
                 <CourseCard
                   key={courseId}
@@ -133,6 +194,8 @@ export default async function HomePage() {
                   author={formatAuthor(course.creator_id, course.author)}
                   description={course.description}
                   src={getCourseImage(course, DEFAULT_IMAGES)}
+                  actionText={actionText}
+                  isCompleted={isCompleted}
                 />
               );
             })}
@@ -143,12 +206,42 @@ export default async function HomePage() {
               No Courses Available
             </div>
             <p className="text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
-              There are no courses listed at the moment. Please check back
-              later.
+              There are no courses listed at the moment. Please check back later.
             </p>
           </div>
         )}
       </section>
+
+      {/* Completed Courses Section */}
+      {completedCourses.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-mono text-xs font-bold tracking-widest text-emerald-700 uppercase flex items-center gap-2">
+              <span>Completed Courses</span>
+              <span className="font-mono text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5">
+                {completedCourses.length}
+              </span>
+            </h2>
+          </div>
+          <div className="flex gap-6 overflow-x-auto py-2 px-1 -mx-1 scrollbar-thin">
+            {completedCourses.map((course, idx) => {
+              const courseId = course.course_id ?? course.id ?? idx;
+              return (
+                <CourseCard
+                  key={courseId}
+                  course_id={courseId}
+                  title={course.title}
+                  author={formatAuthor(course.creator_id, course.author)}
+                  description={course.description}
+                  src={getCourseImage(course, DEFAULT_IMAGES)}
+                  actionText="Review Course ✓"
+                  isCompleted={true}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

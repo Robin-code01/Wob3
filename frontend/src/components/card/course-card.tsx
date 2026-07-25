@@ -8,6 +8,8 @@ type CourseCardProps = {
   title: string;
   author: string;
   description: string;
+  actionText?: string;
+  isCompleted?: boolean;
 };
 
 export default function CourseCard({
@@ -17,6 +19,8 @@ export default function CourseCard({
   title,
   author,
   description,
+  actionText = "Start Learning →",
+  isCompleted = false,
 }: CourseCardProps) {
   function truncateText(str: string, maxLength: number) {
     if (str.length > maxLength) {
@@ -31,6 +35,13 @@ export default function CourseCard({
 
   const cardContent = (
     <div className="group relative flex flex-col bg-white border border-[#0B0E14] w-72 h-64 overflow-hidden hover:cursor-pointer transition-all hover:-translate-y-1 shrink-0">
+      {/* Completed Badge Indicator */}
+      {isCompleted && (
+        <div className="absolute top-2 right-2 z-10 font-mono text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-600 px-2 py-0.5 shadow-sm">
+          Completed ✓
+        </div>
+      )}
+
       {/* Image / Header Container */}
       <div className="relative w-full h-36 bg-slate-100 overflow-hidden border-b border-[#0B0E14]">
         {src ? (
@@ -67,7 +78,7 @@ export default function CourseCard({
           {title}
         </p>
         <span className="font-mono text-xs text-[#F8FAFC] border border-[#F8FAFC] px-3 py-1.5 font-semibold uppercase tracking-wider group-hover:bg-[#F8FAFC] group-hover:text-[#0B0E14] transition-colors">
-          Start Learning →
+          {actionText}
         </span>
       </div>
     </div>
