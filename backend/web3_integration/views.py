@@ -84,28 +84,63 @@ def verify_signature(request):
 
 def _get_web3_and_contract():
     w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URL")))
+    
+    # Get ABI from Django settings (loaded from file) or environment variable
+    abi = settings.COURSE_MODULE_SOULBOUND_ABI
+    if not abi or abi == []:
+        abi_json_str = os.getenv("COURSE_MODULE_SOULBOUND_ABI")
+        if abi_json_str:
+            try:
+                abi = json.loads(abi_json_str)
+            except json.JSONDecodeError as e:
+                raise ValueError(f"COURSE_MODULE_SOULBOUND_ABI environment variable contains invalid JSON: {e}")
+        else:
+            raise ValueError(
+                "COURSE_MODULE_SOULBOUND_ABI not found in settings or environment. "
+                "On deployed servers, set COURSE_MODULE_SOULBOUND_ABI as an environment variable with the contract ABI as JSON."
+            )
+    
+    if not abi:
+        raise ValueError("COURSE_MODULE_SOULBOUND_ABI is empty")
+    
     contract = w3.eth.contract(
         address=Web3.to_checksum_address(os.getenv("COURSE_MODULE_SOULBOUND_ADDRESS")),
-        abi=json.loads(os.getenv("COURSE_MODULE_SOULBOUND_ABI")),
+        abi=abi,
     )
     return w3, contract
 
 
 def _mint_module_completion_transaction(student: str, course_name: str, module_name: str) -> str:
+    # Validate required environment variables
+    required_vars = {
+        "WEB3_PROVIDER_URL": os.getenv("WEB3_PROVIDER_URL"),
+        "COURSE_MODULE_SOULBOUND_ADDRESS": os.getenv("COURSE_MODULE_SOULBOUND_ADDRESS"),
+        "OWNER_ADDRESS": os.getenv("OWNER_ADDRESS"),
+        "OWNER_PRIVATE_KEY": os.getenv("OWNER_PRIVATE_KEY"),
+    }
+    
+    missing_vars = [k for k, v in required_vars.items() if not v]
+    if missing_vars:
+        raise ValueError(f"Missing environment variables: {', '.join(missing_vars)}")
+    
     w3, contract = _get_web3_and_contract()
     owner_address = Web3.to_checksum_address(os.getenv("OWNER_ADDRESS"))
     owner_key = os.getenv("OWNER_PRIVATE_KEY")
+
+    # Ensure student address is checksum format
+    student = Web3.to_checksum_address(student)
 
     func = contract.functions.mintModuleCompletion(student, course_name, module_name)
     try:
         gas_est = func.estimateGas({"from": owner_address})
         gas_limit = int(gas_est * 1.3)
-    except Exception:
+    except Exception as e:
+        print(f"Gas estimation failed: {e}")
         gas_limit = 300000
 
     nonce = w3.eth.get_transaction_count(owner_address)
     
-    # Build base transaction dict
+    # Build base transaction dict - DO NOT include gasPrice initially
     tx_dict = {
         "from": owner_address,
         "nonce": nonce,
@@ -113,19 +148,20 @@ def _mint_module_completion_transaction(student: str, course_name: str, module_n
         "chainId": w3.eth.chain_id,
     }
     
-    # Check if network supports EIP-1559 (has maxPriorityFeePerGas)
+    # Check if network supports EIP-1559
     try:
         latest_block = w3.eth.get_block('latest')
         if 'baseFeePerGas' in latest_block:
-            # EIP-1559 network
+            # EIP-1559 network - use maxFeePerGas and maxPriorityFeePerGas
             base_fee = latest_block['baseFeePerGas']
             max_priority_fee = w3.eth.max_priority_fee
             tx_dict["maxPriorityFeePerGas"] = max_priority_fee
             tx_dict["maxFeePerGas"] = base_fee * 2 + max_priority_fee
         else:
-            # Legacy network
+            # Legacy network - use gasPrice
             tx_dict["gasPrice"] = w3.eth.gas_price
-    except Exception:
+    except Exception as e:
+        print(f"Error detecting EIP-1559: {e}, falling back to gasPrice")
         # Fallback to legacy gasPrice
         tx_dict["gasPrice"] = w3.eth.gas_price
     
