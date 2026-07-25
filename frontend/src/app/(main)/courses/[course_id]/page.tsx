@@ -20,6 +20,13 @@ const DEFAULT_IMAGES = [
   "https://images.unsplash.com/photo-1622979135225-d2ba269bc1bd?auto=format&fit=crop&w=600&q=80",
 ];
 
+// Mock list of sponsors — replace or tie into dynamic backend data if needed
+const MOCK_SPONSORS = [
+  { name: "Ethereum Foundation", category: "Grant Partner", logo: "⚡" },
+  { name: "Polygon Labs", category: "Infrastructure", logo: "🟣" },
+  { name: "Optimism", category: "Ecosystem Fund", logo: "🔴" },
+];
+
 function getCourseImage(course: Course, defaultImages: string[]) {
   if (course.image) return course.image;
 
@@ -331,6 +338,7 @@ export default async function CourseOverviewPage({
               </div>
             )}
           </section>
+
           <MintCourseButton
             courseName={course.title}
             userAddress={userAddress}
@@ -339,6 +347,7 @@ export default async function CourseOverviewPage({
 
         {/* Right Sidebar */}
         <div className="space-y-6">
+          {/* Course Details Card */}
           <div className="border border-[#0B0E14] bg-white p-6 space-y-4">
             <h3 className="font-mono text-xs font-bold tracking-widest text-slate-500 uppercase">
               Course Details
@@ -376,6 +385,37 @@ export default async function CourseOverviewPage({
                   Free
                 </span>
               </div>
+            </div>
+          </div>
+
+          {/* Sponsor List Card */}
+          <div className="border border-[#0B0E14] bg-white p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-mono text-xs font-bold tracking-widest text-slate-500 uppercase">
+                Course Sponsors
+              </h3>
+              <span className="font-mono text-[10px] bg-slate-100 border border-slate-300 px-1.5 py-0.5 text-slate-600">
+                {MOCK_SPONSORS.length}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {MOCK_SPONSORS.map((sponsor, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 hover:border-[#0B0E14] transition-colors"
+                >
+                  <span className="text-lg shrink-0">{sponsor.logo}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-xs text-[#0B0E14] truncate">
+                      {sponsor.name}
+                    </p>
+                    <p className="font-mono text-[10px] text-slate-500">
+                      {sponsor.category}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
