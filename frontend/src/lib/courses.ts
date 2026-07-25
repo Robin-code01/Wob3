@@ -454,72 +454,76 @@ export async function checkModuleCompletion(
  * Triggers minting/recording of module completion by student public key and module ID.
  */
 export async function mintModuleCompletion(
-    moduleId: string | number,
-    publicKey: string,
-    accessToken?: string
-  ): Promise<{ success: boolean; message?: string; tx_hash?: string }> {
-    try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      };
-      if (accessToken) {
-        headers["Authorization"] = `Bearer ${accessToken}`;
-      }
-  
-      const parsedModuleId =
-        typeof moduleId === "string" && !isNaN(Number(moduleId))
-          ? Number(moduleId)
-          : moduleId;
-  
-      // Format valid checksummed address
-      let checksummedAddress = publicKey;
-      try {
-        if (publicKey && publicKey.startsWith("0x")) {
-          checksummedAddress = getAddress(publicKey);
-        }
-      } catch {
-        checksummedAddress = publicKey;
-      }
-  
-      // Pass all field key aliases so Django never gets None
-      const res = await fetch(`${API_BASE_URL}/web3/mint_module_completion_by_id/`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          student_public_key: checksummedAddress,
-          public_key: checksummedAddress,
-          student_address: checksummedAddress,
-          address: checksummedAddress,
-          module_id: parsedModuleId,
-        }),
-      });
-  
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error(
-          `Failed to mint module completion for module ${moduleId} (${res.status}): ${errText}`
-        );
-  
-        let errJson: any = {};
-        try {
-          errJson = JSON.parse(errText);
-        } catch {}
-  
-        return {
-          success: false,
-          message: errJson.error || errJson.detail || `Minting endpoint failed (${res.status})`,
-        };
-      }
-  
-      const data = await res.json().catch(() => ({}));
-      return {
-        success: true,
-        tx_hash: data.tx_hash || data.hash || data.transaction_hash,
-        message: data.message || data.detail || "Module completion minted successfully!",
-      };
-    } catch (err) {
-      console.error(`Error minting completion for module ${moduleId}:`, err);
-      return { success: false, message: "Network error during minting request" };
+  moduleId: string | number,
+  publicKey: string,
+  accessToken?: string
+): Promise<{ success: boolean; message?: string; tx_hash?: string }> {
+  try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+    if (accessToken) {
+      headers["Authorization"] = `Bearer ${accessToken}`;
     }
+
+    const parsedModuleId =
+      typeof moduleId === "string" && !isNaN(Number(moduleId))
+        ? Number(moduleId)
+        : moduleId;
+
+    // Format valid checksummed address
+    let checksummedAddress = publicKey;
+    try {
+      if (publicKey && publicKey.startsWith("0x")) {
+        checksummedAddress = getAddress(publicKey);
+      }
+    } catch {
+      checksummedAddress = publicKey;
+    }
+
+    // Supply all address aliases so backend json.loads lookups do not receive None
+    const res = await fetch(`${API_BASE_URL}/web3/mint_module_completion_by_id/`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        student_public_key: checksummedAddress,
+        public_key: checksummedAddress,
+        student_address: checksummedAddress,
+        address: checksummedAddress,
+        module_id: parsedModuleId,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(
+        `Failed to mint module completion for module ${moduleId} (${res.status}): ${errText}`
+      );
+
+      let errJson: any = {};
+      try {
+        errJson = JSON.parse(errText);
+      } catch {}
+
+      return {
+        success: false,
+        message:
+          errJson.error ||
+          errJson.detail ||
+          errJson.message ||
+          `Minting request failed (${res.status})`,
+      };
+    }
+
+    const data = await res.json().catch(() => ({}));
+    return {
+      success: true,
+      tx_hash: data.tx_hash || data.hash || data.transaction_hash,
+      message: data.message || data.detail || "Module completion minted successfully!",
+    };
+  } catch (err) {
+    console.error(`Error minting completion for module ${moduleId}:`, err);
+    return { success: false, message: "Network error during minting request" };
   }
+}
