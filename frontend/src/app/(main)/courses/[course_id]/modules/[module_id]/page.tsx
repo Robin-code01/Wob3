@@ -577,12 +577,20 @@ export default function QuizPage() {
     // 3. Call minting endpoint: web3/mint_module_completion_by_id/
     const mintResult = await mintModuleCompletion(moduleId, userAddress, accessToken);
 
+    if (!mintResult.success) {
+      setCompletionError(
+        mintResult.message || "Module check passed, but Web3 token minting failed."
+      );
+      setCompletingModule(false);
+      return;
+    }
+
     setModuleCompleted(true);
     setCompletionMessage(
       mintResult.message || checkResult.message || "Module completed successfully!"
     );
     setCompletingModule(false);
-  };
+  }
 
   return (
     <div className="py-10 space-y-8 max-w-4xl mx-auto">
