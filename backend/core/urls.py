@@ -11,5 +11,7 @@ urlpatterns = [
     path('sections/<int:section_id>/', views.section_detail, name='section_detail'),
     path('sections/<int:section_id>/answer/', views.submit_answer, name='submit_answer'),
     path('users/<str:public_key>/courses/', views.user_courses, name='user_courses'),
+    path('users/', views.users_list, name='users_list'),
+    path('users/<str:public_key>/', views.user_detail, name='user_detail'),
     path('enroll/', views.enroll, name='enroll'),
 ]

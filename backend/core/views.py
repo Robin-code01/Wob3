@@ -9,7 +9,7 @@ from .serializers import (
     CourseSerializer, EnrollSerializer, ModuleSerializer,
     SectionSerializer, MCQSerializer, InfoPanelSerializer,
     CodingProblemSerializer, VideoSerializer, BlankSerializer,
-    AnswerSerializer
+    AnswerSerializer, UserSerializer
 )
 from django.core.cache import cache
 
@@ -391,6 +391,60 @@ def check_module_completion(request, module_id):
         'is_complete': True, 
         'message': 'Module complete. Token minting is a work in progress.'
     }, status=200)
+
+@api_view(['GET', 'POST'])
+def users_list(request):
+    """
+    GET  /users/  - List all users
+    POST /users/  - Create a new user (for debugging purposes)
+    """
+    if request.method == 'GET':
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+        
+    if request.method == 'POST':
+        public_key = request.data.get('public_key')
+        if not public_key:
+            return Response({'error': 'public_key is required'}, status=400)
+            
+        try:
+            # Using create_user to properly handle the custom user manager logic
+            user = User.objects.create_user(
+                public_key=public_key,
+                password=request.data.get('password', 'debugpassword123'),
+                name=request.data.get('name', ''),
+                type_of_user=request.data.get('type_of_user', 'Student')
+            )
+            return Response(UserSerializer(user).data, status=201)
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+def user_detail(request, public_key):
+    """
+    GET    /users/<public_key>/  - Get a single user's details
+    PATCH  /users/<public_key>/  - Update a user's fields (e.g., name)
+    DELETE /users/<public_key>/  - Delete a user
+    """
+    try:
+        user = User.objects.get(public_key=public_key.lower())
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+    if request.method == 'GET':
+        return Response(UserSerializer(user).data)
+
+    if request.method == 'PATCH':
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    if request.method == 'DELETE':
+        user.delete()
+        return Response({'message': 'User deleted'}, status=204)
 # def get_certificate(request, course_id):
 #     """
 #     GET /courses/<course_id>/get_certificate/  — Check if the user has completed all modules and is eligible for a certificate.

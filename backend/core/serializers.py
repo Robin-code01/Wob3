@@ -5,6 +5,11 @@ class EnrollSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
     public_key = serializers.CharField()
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['public_key', 'is_staff', 'is_active', 'type_of_user', 'name']
+
 class CourseSerializer(serializers.ModelSerializer):
     creator_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all()
