@@ -24,10 +24,14 @@ export default function CreateModuleForm({
     setError(null);
 
     try {
-      await createModule(courseId, { title }, accessToken);
+      const data = await createModule(courseId, { title }, accessToken);
+
+      console.log(data);
 
       // Refresh data and send user back to the course details page
-      router.push(`/courses/${courseId}`);
+      router.push(
+        `/courses/${courseId}/modules/${data.module_id}/sections/create`,
+      );
       router.refresh();
     } catch (err: any) {
       setError(err.message || "Failed to create module. Please try again.");
