@@ -75,36 +75,56 @@ export async function getAllCourses(): Promise<Course[]> {
  * POST /courses/
  * Create a new course
  */
+// src/lib/courses.ts
+
 export async function createCourse(
-  payload: CreateCoursePayload,
-  accessToken?: string
-): Promise<Course | null> {
-  try {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    };
-    if (accessToken) {
-      headers["Authorization"] = `Bearer ${accessToken}`;
-    }
-
-    const res = await fetch(`${API_BASE_URL}/courses/`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      console.error(`Failed to create course (${res.status})`);
+    payload: CreateCoursePayload,
+    accessToken?: string
+  ): Promise<Course | null> {
+    try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      };
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
+      }
+  
+      // 1. Create course in database
+      const res = await fetch(`${API_BASE_URL}/courses/`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+  
+      if (!res.ok) {
+        console.error(`Failed to create course (${res.status})`);
+        return null;
+      }
+  
+      const courseData = await res.json();
+  
+      // 2. Register course on Web3 backend
+      const web3Res = await fetch(`${API_BASE_URL}/web3/register_course/`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          ...payload,
+          course_id: courseData.course_id ?? courseData.id,
+        }),
+      });
+  
+      if (!web3Res.ok) {
+        const errText = await web3Res.text().catch(() => "");
+        console.error(`Failed to register course on web3 (${web3Res.status}): ${errText}`);
+      }
+  
+      return courseData;
+    } catch (err) {
+      console.error("Error creating course:", err);
       return null;
     }
-
-    return await res.json();
-  } catch (err) {
-    console.error("Error creating course:", err);
-    return null;
   }
-}
 
 /**
  * GET /courses/<course_id>/
