@@ -224,3 +224,49 @@ def mint_module_completion_by_id(request):
         return Response({"error": str(e)}, status=500)
 
 
+@api_view(["POST"])
+def register_course(request):
+    """Register a course and its modules in the contract.
+    
+    Body: {
+      "course_name": "Course Name",
+      "module_names": ["Module 1", "Module 2", ...]
+    }
+    """
+    course_name = request.data.get("course_name")
+    module_names = request.data.get("module_names", [])
+    
+    if not course_name or not module_names:
+        return Response({"error": "course_name and module_names are required"}, status=400)
+    
+    try:
+        w3, contract = _get_web3_and_contract()
+        owner_address = Web3.to_checksum_address(os.getenv("OWNER_ADDRESS"))
+        owner_key = os.getenv("OWNER_PRIVATE_KEY")
+        
+        func = contract.functions.register_course(course_name, module_names)
+        nonce = w3.eth.get_transaction_count(owner_address)
+        
+        tx_dict = {
+            "from": owner_address,
+            "nonce": nonce,
+            "chainId": w3.eth.chain_id,
+        }
+        
+        # Add gas params (EIP-1559 or legacy)
+        latest_block = w3.eth.get_block('latest')
+        if 'baseFeePerGas' in latest_block:
+            base_fee = latest_block['baseFeePerGas']
+            max_priority_fee = w3.eth.max_priority_fee
+            tx_dict["maxPriorityFeePerGas"] = max_priority_fee
+            tx_dict["maxFeePerGas"] = base_fee * 2 + max_priority_fee
+        else:
+            tx_dict["gasPrice"] = w3.eth.gas_price
+        
+        tx = func.build_transaction(tx_dict)
+        signed = w3.eth.account.sign_transaction(tx, private_key=owner_key)
+        tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
+        
+        return Response({"tx_hash": tx_hash.hex()}, status=202)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
