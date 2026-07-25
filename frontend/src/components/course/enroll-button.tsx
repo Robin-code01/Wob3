@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { enrollInCourse } from "@/lib/courses";
 
 type EnrollButtonProps = {
@@ -18,12 +19,16 @@ export default function EnrollButton({
   initialEnrolled,
 }: EnrollButtonProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [isEnrolled, setIsEnrolled] = useState(initialEnrolled);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const effectiveAddress = userAddress || session?.user?.id || "";
+  const effectiveToken = accessToken || (session as any)?.accessToken;
+
   async function handleEnroll() {
-    if (!userAddress) {
+    if (!effectiveAddress) {
       setErrorMsg("Please connect your wallet first.");
       return;
     }
@@ -31,7 +36,7 @@ export default function EnrollButton({
     setLoading(true);
     setErrorMsg(null);
 
-    const res = await enrollInCourse(userAddress, courseId, accessToken);
+    const res = await enrollInCourse(effectiveAddress, courseId, effectiveToken);
 
     if (res.success) {
       setIsEnrolled(true);
@@ -42,7 +47,7 @@ export default function EnrollButton({
     setLoading(false);
   }
 
-  if (isEnrolled) {
+  if (isEnrolled || initialEnrolled) {
     return (
       <div className="flex items-center gap-3">
         <span className="inline-flex items-center gap-1.5 px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-800">

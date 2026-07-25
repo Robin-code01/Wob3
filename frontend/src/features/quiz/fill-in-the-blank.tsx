@@ -3,41 +3,50 @@
 import { useState } from "react";
 
 interface FillInTheBlankQuestionProps {
-  question: string; // Tip: Use "___" or "[blank]" in your question text to represent the gap
+  question: string;
   placeholder?: string;
   onAnswerSubmit?: (answer: string) => void;
+  disabled?: boolean;
 }
 
 export default function FillInTheBlankQuestion({
   question,
   placeholder = "Type your answer here...",
   onAnswerSubmit,
+  disabled,
 }: FillInTheBlankQuestionProps) {
   const [answer, setAnswer] = useState("");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setAnswer(value);
-    if (onAnswerSubmit) {
-      onAnswerSubmit(value);
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (onAnswerSubmit && answer.trim()) {
+      onAnswerSubmit(answer.trim());
     }
   };
 
   return (
-    <div className="flex flex-col gap-4 text-white">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-white">
       {/* Question Heading */}
-      <h3 className="text-xl font-bold tracking-wide">{question}</h3>
+      {question && <h3 className="text-xl font-bold tracking-wide">{question}</h3>}
 
-      {/* Input Field */}
-      <div className="flex flex-col gap-2">
+      {/* Input Field and Submit Button */}
+      <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="text"
           value={answer}
-          onChange={handleChange}
+          onChange={(e) => setAnswer(e.target.value)}
           placeholder={placeholder}
-          className="w-full px-4 py-3 rounded-lg border bg-primary/50 text-white placeholder:text-white/60 border-primary/50 focus:outline-none focus:bg-white focus:text-slate-900 focus:border-white focus:shadow-md transition-all font-medium text-base"
+          disabled={disabled}
+          className="flex-1 px-4 py-3 rounded-lg border bg-primary/50 text-white placeholder:text-white/60 border-primary/50 focus:outline-none focus:bg-white focus:text-slate-900 focus:border-white focus:shadow-md transition-all font-medium text-base"
         />
+        <button
+          type="submit"
+          disabled={!answer.trim() || disabled}
+          className="px-6 py-3 bg-primary text-white font-mono text-xs font-bold uppercase tracking-wider border border-white/20 rounded-lg hover:bg-white hover:text-[#0B0E14] transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
+        >
+          Submit Answer
+        </button>
       </div>
-    </div>
+    </form>
   );
 }

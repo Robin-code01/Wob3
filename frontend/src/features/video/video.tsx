@@ -1,7 +1,7 @@
 interface VideoPlayerSectionProps {
   title?: string;
   description?: string;
-  videoUrl: string; // Accepts YouTube links or direct .mp4 links
+  videoUrl: string;
 }
 
 export default function VideoPlayerSection({
@@ -9,21 +9,38 @@ export default function VideoPlayerSection({
   description,
   videoUrl,
 }: VideoPlayerSectionProps) {
-  // Helper to extract YouTube embed URL if a standard YouTube link is provided
-  const getYouTubeEmbedUrl = (url: string) => {
-    const regExp =
-      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11
-      ? `https://www.youtube.com/embed/${match[2]}`
-      : null;
+  const getEmbedUrl = (url: string) => {
+    if (!url) return null;
+
+    // YouTube match (watch, embed, shorts, youtu.be)
+    const ytMatch = url.match(
+      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/i
+    );
+    if (ytMatch && ytMatch[1]) {
+      return `https://www.youtube.com/embed/${ytMatch[1]}`;
+    }
+
+    // Vimeo match
+    const vimeoMatch = url.match(
+      /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)/i
+    );
+    if (vimeoMatch && vimeoMatch[1]) {
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    }
+
+    // Loom match
+    const loomMatch = url.match(/loom\.com\/share\/([\w-]+)/i);
+    if (loomMatch && loomMatch[1]) {
+      return `https://www.loom.com/embed/${loomMatch[1]}`;
+    }
+
+    return null;
   };
 
-  const youtubeEmbedUrl = getYouTubeEmbedUrl(videoUrl);
+  const embedUrl = getEmbedUrl(videoUrl);
 
   return (
     <div className="flex flex-col gap-4 text-white">
-      {/* Optional Title & Description */}
       {(title || description) && (
         <div className="flex flex-col gap-1">
           {title && (
@@ -35,20 +52,23 @@ export default function VideoPlayerSection({
         </div>
       )}
 
-      {/* Video Container (Aspect Ratio 16:9 with theme border & styling) */}
-      <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-primary/50 bg-black/40 shadow-inner">
-        {youtubeEmbedUrl ? (
+      <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-primary/50 bg-black/40 shadow-inner flex items-center justify-center">
+        {embedUrl ? (
           <iframe
-            src={youtubeEmbedUrl}
+            src={embedUrl}
             title={title || "Video player"}
             className="w-full h-full border-0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
           />
-        ) : (
+        ) : videoUrl ? (
           <video src={videoUrl} controls className="w-full h-full object-cover">
             Your browser does not support the video tag.
           </video>
+        ) : (
+          <div className="font-mono text-xs text-white/60 p-4 text-center">
+            [ Video player unavailable or URL missing ]
+          </div>
         )}
       </div>
     </div>
