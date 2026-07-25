@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getModuleSections } from "@/lib/section/create";
 import ModuleSectionsManager from "@/features/section/create-sections";
 import Link from "next/link";
+import FinishCourseButton from "@/features/course/finish-course";
 
 interface PageProps {
   params: Promise<{
@@ -49,6 +50,7 @@ export default async function CreateSectionsPage({ params }: PageProps) {
       <Link href={`/courses/${course_id}/modules/create`}>
         Create more MODULESSSS!
       </Link>
+      <FinishCourseButton courseId={course_id} accessToken={accessToken} />
     </div>
   );
 }
