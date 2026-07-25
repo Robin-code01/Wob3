@@ -68,6 +68,7 @@ def courses(request):
     if request.method == 'GET':
         all_courses = Course.objects.all()
         serializer = CourseSerializer(all_courses, many=True)
+        
         return Response(serializer.data)
 
     if request.method == 'POST':
