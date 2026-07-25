@@ -1,3 +1,5 @@
+"use client";
+
 import QuizBox from "@/features/quiz/quiz-box";
 import CreateQuizQuestion, {
   type CreatedQuestionPayload,

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import CourseCard from "@/components/card/course-card";
 import { getAllCourses, getEnrolledCourses, Course } from "@/lib/courses";
+import Link from "next/link";
 
 const DEFAULT_IMAGES = [
   "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=600&q=80",
@@ -13,14 +14,14 @@ const DEFAULT_IMAGES = [
 
 function getCourseImage(course: Course, defaultImages: string[]) {
   if (course.image) return course.image;
-  
+
   const rawId = course.course_id ?? course.id ?? course.title ?? "0";
   const num = typeof rawId === "number" ? rawId : parseInt(String(rawId), 10);
-  
+
   if (!isNaN(num)) {
     return defaultImages[Math.abs(num) % defaultImages.length];
   }
-  
+
   let hash = 0;
   const str = String(rawId);
   for (let i = 0; i < str.length; i++) {
@@ -50,20 +51,32 @@ export default async function HomePage() {
 
   // Fetch enrolled courses and popular courses in parallel
   const [enrolledCourses, allCourses] = await Promise.all([
-    userAddress ? getEnrolledCourses(userAddress, accessToken) : Promise.resolve([]),
+    userAddress
+      ? getEnrolledCourses(userAddress, accessToken)
+      : Promise.resolve([]),
     getAllCourses(),
   ]);
 
   return (
     <div className="py-10 space-y-12">
       {/* Welcome Header */}
-      <div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0B0E14]">
-          Welcome
-        </h1>
-        <p className="mt-2 text-base text-slate-700 leading-relaxed">
-          Let's get learning.
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0B0E14]">
+            Welcome
+          </h1>
+          <p className="mt-2 text-base text-slate-700 leading-relaxed">
+            Let's get learning.
+          </p>
+        </div>
+
+        {/* Create Course Button */}
+        <Link
+          href="/courses/create"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 h-fit font-mono text-xs font-bold uppercase tracking-wider text-white bg-[#0B0E14] border border-[#0B0E14] hover:bg-slate-800 transition-all shadow-sm active:translate-y-0.5"
+        >
+          <span className="text-sm font-normal">+</span> Create Course
+        </Link>
       </div>
 
       {/* Continue Learning Section */}
@@ -121,7 +134,7 @@ export default async function HomePage() {
                   description={course.description}
                   src={getCourseImage(course, DEFAULT_IMAGES)}
                 />
-              ); 
+              );
             })}
           </div>
         ) : (
@@ -130,7 +143,8 @@ export default async function HomePage() {
               No Courses Available
             </div>
             <p className="text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
-              There are no courses listed at the moment. Please check back later.
+              There are no courses listed at the moment. Please check back
+              later.
             </p>
           </div>
         )}
