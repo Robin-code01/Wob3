@@ -85,17 +85,14 @@ contract CourseProgressSoulbound is ERC721, Ownable {
     function claimCourseCertificate(
         string calldata courseName
     ) external {
-        bytes32 courseId = _courseId(courseName);
-        require(bytes(courseNames[courseId]).length != 0, "Course not registered");
-        require(!certificateClaimed[msg.sender][courseId], "Certificate already claimed");
-        require(_hasAllModules(msg.sender, courseId), "Missing module completion");
+        _issueCourseCertificate(msg.sender, courseName);
+    }
 
-        certificateClaimed[msg.sender][courseId] = true;
-        _nextTokenId += 1;
-        tokenData[_nextTokenId] = TokenMetadata(courseName, "CERTIFICATE", true);
-        _safeMint(msg.sender, _nextTokenId);
-
-        emit CourseCertificateIssued(msg.sender, courseId, _nextTokenId, courseName);
+    function mintCourseCompletion(
+        address student,
+        string calldata courseName
+    ) external onlyOwner {
+        _issueCourseCertificate(student, courseName);
     }
 
     function getCourseModules(string calldata courseName) external view returns (string[] memory) {
@@ -109,6 +106,20 @@ contract CourseProgressSoulbound is ERC721, Ownable {
             names[i] = courseModuleNames[courseId][moduleId];
         }
         return names;
+    }
+
+    function _issueCourseCertificate(address student, string memory courseName) internal {
+        bytes32 courseId = _courseId(courseName);
+        require(bytes(courseNames[courseId]).length != 0, "Course not registered");
+        require(!certificateClaimed[student][courseId], "Certificate already claimed");
+        require(_hasAllModules(student, courseId), "Missing module completion");
+
+        certificateClaimed[student][courseId] = true;
+        _nextTokenId += 1;
+        tokenData[_nextTokenId] = TokenMetadata(courseName, "CERTIFICATE", true);
+        _safeMint(student, _nextTokenId);
+
+        emit CourseCertificateIssued(student, courseId, _nextTokenId, courseName);
     }
 
     function _hasAllModules(address student, bytes32 courseId) internal view returns (bool) {
