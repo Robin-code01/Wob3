@@ -20,11 +20,33 @@ const DEFAULT_IMAGES = [
   "https://images.unsplash.com/photo-1622979135225-d2ba269bc1bd?auto=format&fit=crop&w=600&q=80",
 ];
 
-// Mock list of sponsors — replace or tie into dynamic backend data if needed
-const MOCK_SPONSORS = [
-  { name: "Ethereum Foundation", category: "Grant Partner", logo: "⚡" },
-  { name: "Polygon Labs", category: "Infrastructure", logo: "🟣" },
-  { name: "Optimism", category: "Ecosystem Fund", logo: "🔴" },
+type Sponsor = {
+  name: string;
+  category: string;
+  logoUrl?: string;
+  fallbackText?: string;
+};
+
+// Sponsor list with company logo URLs
+const MOCK_SPONSORS: Sponsor[] = [
+  {
+    name: "Lumin",
+    category: "Document Platform",
+    logoUrl: "https://store-images.s-microsoft.com/image/apps.9470.13510798887493482.d97ee858-96b4-4161-957f-c13c6e93c910.2afe9712-a03a-4e60-9218-f82974c0b26b",
+    fallbackText: "L",
+  },
+  {
+    name: "ONCHAIN EDUCATION",
+    category: "Learning Platform",
+    logoUrl: "https://onchaineducation.org/apple-touch-icon.png",
+    fallbackText: "OE",
+  },
+  {
+    name: "Fire Eyes",
+    category: "Crypto Builders",
+    logoUrl: "https://fireeyes.xyz/images/fireeyes.png",
+    fallbackText: "FE",
+  },
 ];
 
 function getCourseImage(course: Course, defaultImages: string[]) {
@@ -391,11 +413,11 @@ export default async function CourseOverviewPage({
             </div>
           </div>
 
-          {/* Sponsor List Card */}
+          {/* Sought After By Section */}
           <div className="border border-[#0B0E14] bg-white p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center justify-between">
               <h3 className="font-mono text-xs font-bold tracking-widest text-slate-500 uppercase">
-                Course Sponsors
+                Sought After By
               </h3>
               <span className="font-mono text-[10px] bg-slate-100 border border-slate-300 px-1.5 py-0.5 text-slate-600">
                 {MOCK_SPONSORS.length}
@@ -408,12 +430,26 @@ export default async function CourseOverviewPage({
                   key={index}
                   className="flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 hover:border-[#0B0E14] transition-colors"
                 >
-                  <span className="text-lg shrink-0">{sponsor.logo}</span>
+                  <div className="relative w-8 h-8 shrink-0 bg-white border border-slate-200 rounded flex items-center justify-center overflow-hidden">
+                    {sponsor.logoUrl ? (
+                      <Image
+                        src={sponsor.logoUrl}
+                        alt={`${sponsor.name} logo`}
+                        fill
+                        unoptimized={sponsor.logoUrl.startsWith("http")}
+                        className="object-contain p-1"
+                      />
+                    ) : (
+                      <span className="font-mono text-xs font-bold text-[#0B0E14]">
+                        {sponsor.fallbackText || sponsor.name.charAt(0)}
+                      </span>
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-xs text-[#0B0E14] truncate">
                       {sponsor.name}
                     </p>
-                    <p className="font-mono text-[10px] text-slate-500">
+                    <p className="font-mono text-[10px] text-slate-500 truncate">
                       {sponsor.category}
                     </p>
                   </div>
