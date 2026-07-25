@@ -1,9 +1,8 @@
 import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import CourseCard from "@/components/card/course-card";
-import { getAllCourses, getEnrolledCourses } from "@/lib/courses";
+import { getAllCourses, getEnrolledCourses, Course } from "@/lib/courses";
 
-// Fallback images if a course does not provide a custom image
 const DEFAULT_IMAGES = [
   "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=600&q=80",
   "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=600&q=80",
@@ -11,6 +10,25 @@ const DEFAULT_IMAGES = [
   "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=600&q=80",
   "https://images.unsplash.com/photo-1622979135225-d2ba269bc1bd?auto=format&fit=crop&w=600&q=80",
 ];
+
+function getCourseImage(course: Course, defaultImages: string[]) {
+  if (course.image) return course.image;
+  
+  const rawId = course.course_id ?? course.id ?? course.title ?? "0";
+  const num = typeof rawId === "number" ? rawId : parseInt(String(rawId), 10);
+  
+  if (!isNaN(num)) {
+    return defaultImages[Math.abs(num) % defaultImages.length];
+  }
+  
+  let hash = 0;
+  const str = String(rawId);
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return defaultImages[Math.abs(hash) % defaultImages.length];
+}
 
 function formatAuthor(creatorId?: string, author?: string) {
   if (author) return author;
@@ -57,16 +75,19 @@ export default async function HomePage() {
         </div>
         {enrolledCourses.length > 0 ? (
           <div className="flex gap-6 overflow-x-auto py-2 px-1 -mx-1 scrollbar-thin">
-            {enrolledCourses.map((course, idx) => (
-              <CourseCard
-                key={course.id || course.course_id || idx}
-                id={course.id || course.course_id}
-                title={course.title}
-                author={formatAuthor(course.creator_id, course.author)}
-                description={course.description}
-                src={course.image || DEFAULT_IMAGES[idx % DEFAULT_IMAGES.length]}
-              />
-            ))}
+            {enrolledCourses.map((course, idx) => {
+              const courseId = course.course_id ?? course.id ?? idx;
+              return (
+                <CourseCard
+                  key={courseId}
+                  course_id={courseId}
+                  title={course.title}
+                  author={formatAuthor(course.creator_id, course.author)}
+                  description={course.description}
+                  src={getCourseImage(course, DEFAULT_IMAGES)}
+                />
+              );
+            })}
           </div>
         ) : (
           <div className="p-8 border border-[#0B0E14] bg-white text-center">
@@ -89,16 +110,19 @@ export default async function HomePage() {
         </div>
         {allCourses.length > 0 ? (
           <div className="flex gap-6 overflow-x-auto py-2 px-1 -mx-1 scrollbar-thin">
-            {allCourses.map((course, idx) => (
-              <CourseCard
-                key={course.id || course.course_id || idx}
-                id={course.id || course.course_id}
-                title={course.title}
-                author={formatAuthor(course.creator_id, course.author)}
-                description={course.description}
-                src={course.image || DEFAULT_IMAGES[idx % DEFAULT_IMAGES.length]}
-              />
-            ))}
+            {allCourses.map((course, idx) => {
+              const courseId = course.course_id ?? course.id ?? idx;
+              return (
+                <CourseCard
+                  key={courseId}
+                  course_id={courseId}
+                  title={course.title}
+                  author={formatAuthor(course.creator_id, course.author)}
+                  description={course.description}
+                  src={getCourseImage(course, DEFAULT_IMAGES)}
+                />
+              );
+            })}
           </div>
         ) : (
           <div className="p-8 border border-[#0B0E14] bg-white text-center">

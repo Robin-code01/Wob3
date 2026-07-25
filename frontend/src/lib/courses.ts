@@ -1,7 +1,6 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://wob3.onrender.com";
 
 export interface Course {
-  id?: string | number;
   course_id?: string | number;
   title: string;
   description: string;
@@ -13,7 +12,6 @@ export interface Course {
 }
 
 export interface Module {
-  id?: string | number;
   module_id?: string | number;
   title: string;
   [key: string]: any;

@@ -2,6 +2,7 @@ import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
 
 type CourseCardProps = {
+  course_id?: string | number;
   id?: string | number;
   src?: StaticImageData | string;
   title: string;
@@ -10,6 +11,7 @@ type CourseCardProps = {
 };
 
 export default function CourseCard({
+  course_id,
   id,
   src,
   title,
@@ -23,6 +25,9 @@ export default function CourseCard({
     return str;
   }
   const truncatedDescription = truncateText(description, 65);
+
+  // Safely resolve the ID so we never navigate to /courses/undefined
+  const resolvedId = course_id ?? id;
 
   const cardContent = (
     <div className="group relative flex flex-col bg-white border border-[#0B0E14] w-72 h-64 overflow-hidden hover:cursor-pointer transition-all hover:-translate-y-1 shrink-0">
@@ -68,8 +73,8 @@ export default function CourseCard({
     </div>
   );
 
-  if (id !== undefined && id !== null) {
-    return <Link href={`/courses/${id}`}>{cardContent}</Link>;
+  if (resolvedId !== undefined && resolvedId !== null) {
+    return <Link href={`/courses/${resolvedId}`}>{cardContent}</Link>;
   }
 
   return cardContent;

@@ -1,8 +1,8 @@
 import { auth } from "@/lib/auth/auth";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getCourseById, getCourseModules, getEnrolledCourses } from "@/lib/courses";
+import { getCourseById, getCourseModules, getEnrolledCourses, Course } from "@/lib/courses";
 import EnrollButton from "@/components/course/enroll-button";
 
 const DEFAULT_IMAGES = [
@@ -13,6 +13,25 @@ const DEFAULT_IMAGES = [
   "https://images.unsplash.com/photo-1622979135225-d2ba269bc1bd?auto=format&fit=crop&w=600&q=80",
 ];
 
+function getCourseImage(course: Course, defaultImages: string[]) {
+  if (course.image) return course.image;
+  
+  const rawId = course.course_id ?? course.id ?? course.title ?? "0";
+  const num = typeof rawId === "number" ? rawId : parseInt(String(rawId), 10);
+  
+  if (!isNaN(num)) {
+    return defaultImages[Math.abs(num) % defaultImages.length];
+  }
+  
+  let hash = 0;
+  const str = String(rawId);
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return defaultImages[Math.abs(hash) % defaultImages.length];
+}
+
 function formatAuthor(creatorId?: string, author?: string) {
   if (author) return author;
   if (creatorId && creatorId.startsWith("0x") && creatorId.length > 10) {
@@ -22,7 +41,7 @@ function formatAuthor(creatorId?: string, author?: string) {
 }
 
 type CourseOverviewPageProps = {
-  params: Promise<{ id: string }>;
+  params: Promise<{ course_id: string }>;
 };
 
 export default async function CourseOverviewPage({ params }: CourseOverviewPageProps) {
@@ -32,31 +51,43 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
     redirect("/");
   }
 
-  const { id } = await params;
+  const { course_id } = await params;
   const userAddress = session.user?.id || "";
   const accessToken = (session as any)?.accessToken;
 
-  // Fetch course details, course modules, and user's enrolled courses in parallel
   const [course, modules, enrolledCourses] = await Promise.all([
-    getCourseById(id),
-    getCourseModules(id),
+    getCourseById(course_id),
+    getCourseModules(course_id),
     userAddress ? getEnrolledCourses(userAddress, accessToken) : Promise.resolve([]),
   ]);
 
   if (!course) {
-    notFound();
+    return (
+      <div className="py-16 text-center space-y-6">
+        <h1 className="text-2xl font-bold text-[#0B0E14]">Course Not Found</h1>
+        <p className="text-slate-600 text-sm max-w-md mx-auto">
+          Could not load details for course ID <code className="font-mono bg-slate-100 px-1 py-0.5">{course_id}</code>.
+        </p>
+        <div>
+          <Link
+            href="/home"
+            className="inline-block bg-[#0B0E14] text-[#F8FAFC] font-mono text-xs uppercase tracking-wider px-5 py-2.5 font-semibold"
+          >
+            ← Back to Home
+          </Link>
+        </div>
+      </div>
+    );
   }
 
-  const courseIdStr = String(course.id || course.course_id || id);
+  const activeCourseId = String(course.course_id ?? course.id ?? course_id);
 
   const isEnrolled = enrolledCourses.some((c) => {
-    const cId = String(c.id || c.course_id);
-    return cId === courseIdStr;
+    return String(c.course_id ?? c.id) === activeCourseId;
   });
 
   const formattedAuthor = formatAuthor(course.creator_id, course.author);
-  const imageIndex = typeof course.id === "number" ? course.id : 0;
-  const courseImage = course.image || DEFAULT_IMAGES[imageIndex % DEFAULT_IMAGES.length];
+  const courseImage = getCourseImage(course, DEFAULT_IMAGES);
 
   return (
     <div className="py-10 space-y-10">
@@ -74,7 +105,7 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
       <div className="border border-[#0B0E14] bg-white overflow-hidden">
         <div className="grid md:grid-cols-3">
           {/* Image Column */}
-          <div className="relative min-h-55 md:min-h-full bg-slate-100 border-b md:border-b-0 md:border-r border-[#0B0E14]">
+          <div className="relative min-h-50 md:min-h-full bg-slate-100 border-b md:border-b-0 md:border-r border-[#0B0E14]">
             {courseImage ? (
               <Image
                 src={courseImage}
@@ -118,7 +149,7 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
               </div>
 
               <EnrollButton
-                courseId={courseIdStr}
+                courseId={activeCourseId}
                 userAddress={userAddress}
                 accessToken={accessToken}
                 initialEnrolled={isEnrolled}
@@ -130,9 +161,7 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
 
       {/* Content Grid */}
       <div className="grid md:grid-cols-3 gap-8">
-        {/* Left 2 Columns: Outcomes & Modules */}
         <div className="md:col-span-2 space-y-8">
-          {/* Learning Outcomes */}
           {course.outcomes && (
             <section className="border border-[#0B0E14] bg-white p-6 sm:p-8">
               <h2 className="font-mono text-xs font-bold tracking-widest text-slate-500 uppercase mb-4">
@@ -167,7 +196,7 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
                   const modNumber = String(idx + 1).padStart(2, "0");
                   return (
                     <div
-                      key={module.id || module.module_id || idx}
+                      key={module.module_id || module.id || idx}
                       className="p-4 flex items-center justify-between gap-4 bg-white hover:bg-slate-50 transition-colors"
                     >
                       <div className="flex items-center gap-4">
@@ -202,7 +231,7 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
           </section>
         </div>
 
-        {/* Right Sidebar: Quick Details */}
+        {/* Right Sidebar */}
         <div className="space-y-6">
           <div className="border border-[#0B0E14] bg-white p-6 space-y-4">
             <h3 className="font-mono text-xs font-bold tracking-widest text-slate-500 uppercase">
