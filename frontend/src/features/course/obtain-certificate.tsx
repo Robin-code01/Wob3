@@ -32,7 +32,7 @@ export default function MintCourseButton({
       const baseUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL || "https://wob3.onrender.com";
 
-      const response = await fetch(`${baseUrl}/mint_course_completion/`, {
+      const response = await fetch(`${baseUrl}/web3/mint_course_completion/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
