@@ -29,7 +29,6 @@ class CourseSerializer(serializers.ModelSerializer):
     def get_companies_interested_count(self, obj):
         return obj.companies_interested.count()
 
-
 class ModuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Module
