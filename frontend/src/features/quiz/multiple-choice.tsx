@@ -25,6 +25,7 @@ export default function QuizQuestion({
   const [selectedOption, setSelectedOption] = useState<Option | null>(null);
 
   const handleSelect = (option: Option) => {
+    if (disabled) return;
     setSelectedOption(option);
     if (onSelectOption) {
       onSelectOption(option);
@@ -32,7 +33,7 @@ export default function QuizQuestion({
   };
 
   const handleSubmit = () => {
-    if (selectedOption) {
+    if (selectedOption && !disabled) {
       if (onSubmitAnswer) {
         onSubmitAnswer(selectedOption);
       } else if (onSelectOption) {
@@ -42,12 +43,12 @@ export default function QuizQuestion({
   };
 
   return (
-    <div className="flex flex-col gap-4 text-white">
+    <div className="flex flex-col gap-4 text-[#0B0E14]">
       {/* Question Heading */}
-      <h3 className="text-xl font-bold tracking-wide">{question}</h3>
+      <h3 className="text-lg font-bold text-[#0B0E14] leading-snug">{question}</h3>
 
-      {/* Options Grid/List */}
-      <div className="flex flex-col gap-2">
+      {/* Options List */}
+      <div className="flex flex-col gap-2.5">
         {options.map((option, index) => {
           const isSelected = selectedOption?.id === option.id;
 
@@ -57,24 +58,26 @@ export default function QuizQuestion({
               type="button"
               onClick={() => handleSelect(option)}
               disabled={disabled}
-              className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg border text-left font-medium transition-all cursor-pointer ${
+              className={`flex items-center gap-3 w-full px-4 py-3 text-left font-medium transition-all border ${
+                disabled ? "cursor-not-allowed opacity-80" : "cursor-pointer"
+              } ${
                 isSelected
-                  ? "bg-white text-[#0B0E14] border-white shadow-md font-semibold"
-                  : "bg-primary/50 hover:bg-primary/70 text-white border-primary/50"
+                  ? "bg-[#0B0E14] text-white border-[#0B0E14] font-semibold"
+                  : "bg-white text-[#0B0E14] border-slate-300 hover:border-[#0B0E14] hover:bg-slate-50"
               }`}
             >
-              {/* Option Letter Badge (A, B, C, D...) */}
+              {/* Option Letter Badge (A, B, C...) */}
               <span
-                className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-colors ${
+                className={`flex items-center justify-center w-7 h-7 shrink-0 font-mono text-xs font-bold transition-colors ${
                   isSelected
                     ? "bg-primary text-white"
-                    : "bg-primary/80 text-teal-200"
+                    : "bg-slate-100 text-slate-700 border border-slate-300"
                 }`}
               >
                 {String.fromCharCode(65 + index)}
               </span>
 
-              <span>{option.text}</span>
+              <span className="text-sm">{option.text}</span>
             </button>
           );
         })}
@@ -86,7 +89,7 @@ export default function QuizQuestion({
           type="button"
           onClick={handleSubmit}
           disabled={!selectedOption || disabled}
-          className="px-6 py-2.5 bg-primary text-white font-mono text-xs font-bold uppercase tracking-wider border border-white/20 rounded-lg hover:bg-white hover:text-[#0B0E14] transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="h-11 px-6 bg-primary text-white font-mono text-xs font-bold uppercase tracking-wider border border-[#0B0E14] hover:bg-[#0B0E14] hover:text-[#F8FAFC] transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         >
           Submit Answer
         </button>

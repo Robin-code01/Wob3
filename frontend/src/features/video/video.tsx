@@ -12,7 +12,6 @@ export default function VideoPlayerSection({
   const getEmbedUrl = (url: string) => {
     if (!url) return null;
 
-    // YouTube match (watch, embed, shorts, youtu.be)
     const ytMatch = url.match(
       /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/i
     );
@@ -20,7 +19,6 @@ export default function VideoPlayerSection({
       return `https://www.youtube.com/embed/${ytMatch[1]}`;
     }
 
-    // Vimeo match
     const vimeoMatch = url.match(
       /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)/i
     );
@@ -28,7 +26,6 @@ export default function VideoPlayerSection({
       return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
     }
 
-    // Loom match
     const loomMatch = url.match(/loom\.com\/share\/([\w-]+)/i);
     if (loomMatch && loomMatch[1]) {
       return `https://www.loom.com/embed/${loomMatch[1]}`;
@@ -40,19 +37,21 @@ export default function VideoPlayerSection({
   const embedUrl = getEmbedUrl(videoUrl);
 
   return (
-    <div className="flex flex-col gap-4 text-white">
+    <div className="flex flex-col gap-4 text-[#0B0E14]">
       {(title || description) && (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 border-b border-slate-200 pb-3">
           {title && (
-            <h3 className="text-xl font-bold tracking-wide">{title}</h3>
+            <h3 className="text-xl font-bold tracking-tight text-[#0B0E14]">
+              {title}
+            </h3>
           )}
           {description && (
-            <p className="text-sm text-white/80">{description}</p>
+            <p className="text-sm text-slate-600">{description}</p>
           )}
         </div>
       )}
 
-      <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-primary/50 bg-black/40 shadow-inner flex items-center justify-center">
+      <div className="relative w-full aspect-video border border-[#0B0E14] bg-slate-900 overflow-hidden flex items-center justify-center">
         {embedUrl ? (
           <iframe
             src={embedUrl}
@@ -66,7 +65,7 @@ export default function VideoPlayerSection({
             Your browser does not support the video tag.
           </video>
         ) : (
-          <div className="font-mono text-xs text-white/60 p-4 text-center">
+          <div className="font-mono text-xs text-slate-500 bg-slate-100 w-full h-full p-4 flex items-center justify-center text-center">
             [ Video player unavailable or URL missing ]
           </div>
         )}

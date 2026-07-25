@@ -542,7 +542,7 @@ export default function QuizPage() {
     setCompletingModule(true);
     setCompletionError(null);
 
-    // 1. Sequentially register Info_panel and Video sections with backend one at a time to prevent SQLite database locks
+    // 1. Sequentially register Info_panel and Video sections with backend
     for (let idx = 0; idx < sections.length; idx++) {
       const sec = sections[idx];
       const { type } = normalizeSectionData(sec, idx);
@@ -590,7 +590,7 @@ export default function QuizPage() {
       mintResult.message || checkResult.message || "Module completed successfully!"
     );
     setCompletingModule(false);
-  }
+  };
 
   return (
     <div className="py-10 space-y-8 max-w-4xl mx-auto">
@@ -649,7 +649,7 @@ export default function QuizPage() {
                           !p.startsWith("http") &&
                           isNaN(Number(p))
                       ) && (
-                        <div className="text-sm text-white/90 leading-relaxed pt-2 space-y-2 border-t border-slate-800">
+                        <div className="text-sm text-slate-700 leading-relaxed pt-2 space-y-2 border-t border-slate-200">
                           {contentParagraphs
                             .filter(
                               (p) =>
@@ -670,10 +670,10 @@ export default function QuizPage() {
                 {secType === "mcq" && (
                   <div className="space-y-3">
                     {title && title !== question && (
-                      <h4 className="font-bold text-lg text-white mb-1">{title}</h4>
+                      <h4 className="font-bold text-lg text-[#0B0E14] mb-1">{title}</h4>
                     )}
                     {description && description !== question && (
-                      <p className="text-sm text-white/80 mb-2">{description}</p>
+                      <p className="text-sm text-slate-600 mb-2">{description}</p>
                     )}
                     <QuizQuestion
                       question={question}
@@ -686,10 +686,10 @@ export default function QuizPage() {
                     />
                     {status?.message && (
                       <div
-                        className={`font-mono text-xs p-2.5 rounded border mt-2 ${
+                        className={`font-mono text-xs p-3 border mt-2 ${
                           status.isCorrect
-                            ? "bg-emerald-950/80 text-emerald-300 border-emerald-600"
-                            : "bg-rose-950/80 text-rose-300 border-rose-600"
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-600"
+                            : "bg-rose-50 text-rose-800 border-rose-600"
                         }`}
                       >
                         {status.message}
@@ -701,10 +701,10 @@ export default function QuizPage() {
                 {(secType === "blank" || secType === "coding_problem") && (
                   <div className="space-y-3">
                     {title && title !== question && (
-                      <h4 className="font-bold text-lg text-white mb-1">{title}</h4>
+                      <h4 className="font-bold text-lg text-[#0B0E14] mb-1">{title}</h4>
                     )}
                     {description && description !== question && description !== title && (
-                      <p className="text-sm text-white/80 mb-2">{description}</p>
+                      <p className="text-sm text-slate-600 mb-2">{description}</p>
                     )}
                     <FillInTheBlankQuestion
                       question={question || title || description || "Please fill in the blank:"}
@@ -716,10 +716,10 @@ export default function QuizPage() {
                     />
                     {status?.message && (
                       <div
-                        className={`font-mono text-xs p-2.5 rounded border mt-2 ${
+                        className={`font-mono text-xs p-3 border mt-2 ${
                           status.isCorrect
-                            ? "bg-emerald-950/80 text-emerald-300 border-emerald-600"
-                            : "bg-rose-950/80 text-rose-300 border-rose-600"
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-600"
+                            : "bg-rose-50 text-rose-800 border-rose-600"
                         }`}
                       >
                         {status.message}

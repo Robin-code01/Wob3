@@ -6,9 +6,9 @@ interface KeyPoint {
 interface TextLessonSectionProps {
   title?: string;
   subtitle?: string;
-  content: string[]; // Pass paragraphs as an array of strings
-  keyPoints?: KeyPoint[]; // Optional bullet points/takeaways
-  calloutNote?: string; // Optional highlighted tip or warning box
+  content: string[];
+  keyPoints?: KeyPoint[];
+  calloutNote?: string;
 }
 
 export default function TextLessonSection({
@@ -19,17 +19,25 @@ export default function TextLessonSection({
   calloutNote,
 }: TextLessonSectionProps) {
   return (
-    <div className="flex flex-col gap-5 text-white">
+    <div className="flex flex-col gap-5 text-[#0B0E14]">
       {/* Section Header */}
-      {title && (
-        <div className="flex flex-col gap-1 border-b border-primary/40 pb-3">
-          <h3 className="text-2xl font-bold tracking-wide">{title}</h3>
-          {subtitle && <p className="text-sm text-white/80">{subtitle}</p>}
+      {(title || subtitle) && (
+        <div className="flex flex-col gap-1 border-b border-slate-200 pb-3">
+          {subtitle && (
+            <span className="font-mono text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {subtitle}
+            </span>
+          )}
+          {title && (
+            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0B0E14]">
+              {title}
+            </h3>
+          )}
         </div>
       )}
 
       {/* Main Paragraphs */}
-      <div className="flex flex-col gap-3 text-base text-white/90 leading-relaxed font-normal">
+      <div className="flex flex-col gap-3 text-sm sm:text-base text-slate-700 leading-relaxed font-normal">
         {content.map((paragraph, index) => (
           <p key={index}>{paragraph}</p>
         ))}
@@ -37,26 +45,26 @@ export default function TextLessonSection({
 
       {/* Key Takeaways / Bullet Points */}
       {keyPoints && keyPoints.length > 0 && (
-        <div className="flex flex-col gap-2 mt-1">
-          <h4 className="text-sm uppercase font-bold tracking-wider text-teal-200">
+        <div className="flex flex-col gap-3 mt-1">
+          <h4 className="font-mono text-xs font-bold uppercase tracking-widest text-slate-500">
             Key Concepts
           </h4>
           <ul className="flex flex-col gap-2">
             {keyPoints.map((point, index) => (
               <li
                 key={index}
-                className="flex items-start gap-3 bg-primary/40 p-3 rounded-lg border border-primary/40"
+                className="flex items-start gap-3 bg-slate-50 p-3.5 border border-slate-200 text-sm text-slate-800"
               >
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white text-slate-900 text-xs font-bold shrink-0 mt-0.5">
+                <span className="flex items-center justify-center w-5 h-5 bg-[#0B0E14] text-white font-mono text-xs font-bold shrink-0 mt-0.5">
                   ✓
                 </span>
-                <div className="text-sm">
+                <div>
                   {point.title && (
-                    <span className="font-semibold text-white mr-1">
+                    <span className="font-bold text-[#0B0E14] mr-1">
                       {point.title}:
                     </span>
                   )}
-                  <span className="text-white/85">{point.description}</span>
+                  <span className="text-slate-700">{point.description}</span>
                 </div>
               </li>
             ))}
@@ -66,10 +74,12 @@ export default function TextLessonSection({
 
       {/* Callout / Note Box */}
       {calloutNote && (
-        <div className="bg-white text-slate-900 p-4 rounded-lg shadow-md flex gap-3 items-start border-l-4 border-teal-300 mt-2">
-          <span className="text-xl">💡</span>
-          <div className="text-sm font-medium leading-snug">
-            <span className="font-bold block mb-0.5">Important Note:</span>
+        <div className="bg-amber-50 text-slate-800 p-4 border border-amber-300 border-l-4 border-l-amber-500 flex gap-3 items-start mt-2 text-xs sm:text-sm">
+          <span className="text-base">💡</span>
+          <div className="leading-relaxed">
+            <span className="font-bold text-[#0B0E14] block mb-0.5 font-mono text-xs uppercase tracking-wider">
+              Important Note
+            </span>
             {calloutNote}
           </div>
         </div>
