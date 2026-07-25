@@ -20,7 +20,7 @@ export default async function CreateSectionsPage({ params }: PageProps) {
   const { course_id, module_id } = await params;
   const accessToken = (session as any)?.accessToken;
 
-  let initialSections = [];
+  let initialSections: any[] = [];
   try {
     initialSections = await getModuleSections(module_id);
   } catch (err) {
@@ -28,17 +28,14 @@ export default async function CreateSectionsPage({ params }: PageProps) {
   }
 
   return (
-    <div className="py-10 space-y-8 max-w-6xl mx-auto px-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">
-            Module Section Builder
-          </h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Create video lessons, quizzes, fill-in-blanks, and info panels for
-            Module #{module_id}.
-          </p>
-        </div>
+    <div className="py-8 space-y-6 max-w-6xl mx-auto px-4">
+      <div>
+        <h1 className="text-3xl font-extrabold tracking-tight text-[#0B0E14]">
+          Module Sections
+        </h1>
+        <p className="mt-1 text-sm text-slate-700">
+          Create and view sections for Module #{module_id}.
+        </p>
       </div>
 
       <ModuleSectionsManager

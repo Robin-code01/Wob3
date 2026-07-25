@@ -16,42 +16,7 @@ interface ModuleSectionsManagerProps {
   accessToken?: string;
 }
 
-const SECTION_TYPE_CONFIG: Record<
-  SectionType,
-  { label: string; desc: string; icon: string; badgeBg: string; badgeText: string }
-> = {
-  Video: {
-    label: "Video Lesson",
-    desc: "Embed YouTube or direct video streams",
-    icon: "📹",
-    badgeBg: "bg-blue-500/10 border-blue-500/30",
-    badgeText: "text-blue-400",
-  },
-  MCQ: {
-    label: "Multiple Choice",
-    desc: "Test knowledge with single-choice options",
-    icon: "📝",
-    badgeBg: "bg-amber-500/10 border-amber-500/30",
-    badgeText: "text-amber-400",
-  },
-  FillInBlank: {
-    label: "Fill in the Blank",
-    desc: "Interactive completion prompts",
-    icon: "🔤",
-    badgeBg: "bg-purple-500/10 border-purple-500/30",
-    badgeText: "text-purple-400",
-  },
-  InfoPanel: {
-    label: "Info Panel",
-    desc: "Rich explanatory text or key takeaways",
-    icon: "💡",
-    badgeBg: "bg-emerald-500/10 border-emerald-500/30",
-    badgeText: "text-emerald-400",
-  },
-};
-
 export default function ModuleSectionsManager({
-  courseId,
   moduleId,
   initialSections = [],
   accessToken,
@@ -59,29 +24,28 @@ export default function ModuleSectionsManager({
   const router = useRouter();
   const [sections, setSections] = useState<SectionItem[]>(initialSections);
   const [activeSectionIdx, setActiveSectionIdx] = useState<number | null>(
-    initialSections.length > 0 ? 0 : null
+    initialSections.length > 0 ? 0 : null,
   );
 
-  // Popover state
+  // Popover State under + button
   const [showTypeMenu, setShowTypeMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Creation State
+  // Draft / Form State
   const [draftType, setDraftType] = useState<SectionType | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form inputs
+  // Form Fields
   const [url, setUrl] = useState("");
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState<string[]>(["", "", ""]);
   const [correctAnswer, setCorrectAnswer] = useState("");
-  const [sentenceWithBlank, setSentenceWithBlank] = useState("");
-  const [blankAnswer, setBlankAnswer] = useState("");
-  const [infoTitle, setInfoTitle] = useState("");
-  const [infoBody, setInfoBody] = useState("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [sentence, setSentence] = useState("");
 
-  // Close popup menu when clicking outside
+  // Dismiss popover menu when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -98,20 +62,19 @@ export default function ModuleSectionsManager({
     setShowTypeMenu(false);
     setError(null);
 
-    // Reset forms
+    // Reset Form inputs
     setUrl("");
     setQuestion("");
     setOptions(["", "", ""]);
     setCorrectAnswer("");
-    setSentenceWithBlank("");
-    setBlankAnswer("");
-    setInfoTitle("");
-    setInfoBody("");
+    setTitle("");
+    setContent("");
+    setSentence("");
   };
 
-  const handleOptionChange = (idx: number, val: string) => {
+  const handleOptionChange = (idx: number, value: string) => {
     const updated = [...options];
-    updated[idx] = val;
+    updated[idx] = value;
     setOptions(updated);
   };
 
@@ -124,46 +87,65 @@ export default function ModuleSectionsManager({
 
     let payload: CreateSectionPayload;
 
-    try {
-      if (draftType === "Video") {
-        if (!url.trim()) throw new Error("Video URL is required.");
-        payload = { type_of_section: "Video", url };
-      } else if (draftType === "MCQ") {
-        const cleanOpts = options.map((o) => o.trim()).filter(Boolean);
-        if (!question.trim()) throw new Error("Question text is required.");
-        if (cleanOpts.length < 2) throw new Error("Provide at least 2 options.");
-        if (!correctAnswer.trim() || !cleanOpts.includes(correctAnswer)) {
-          throw new Error("Select a valid correct answer option.");
-        }
-        payload = {
-          type_of_section: "MCQ",
-          question,
-          options: cleanOpts,
-          correct_answer: correctAnswer,
-        };
-      } else if (draftType === "FillInBlank") {
-        if (!sentenceWithBlank.trim()) throw new Error("Prompt sentence required.");
-        if (!blankAnswer.trim()) throw new Error("Correct answer required.");
-        payload = {
-          type_of_section: "FillInBlank",
-          sentence_with_blank: sentenceWithBlank,
-          correct_answer: blankAnswer,
-        };
-      } else {
-        if (!infoTitle.trim() || !infoBody.trim()) {
-          throw new Error("Title and content body are required.");
-        }
-        payload = {
-          type_of_section: "InfoPanel",
-          title: infoTitle,
-          body_text: infoBody,
-        };
+    if (draftType === "Video") {
+      if (!url.trim()) {
+        setError("Video URL is required.");
+        setLoading(false);
+        return;
       }
+      payload = { type_of_section: "Video", url };
+    } else if (draftType === "MCQ") {
+      const cleanOpts = options.map((o) => o.trim()).filter(Boolean);
+      if (!question.trim()) {
+        setError("Question text is required.");
+        setLoading(false);
+        return;
+      }
+      if (cleanOpts.length < 2) {
+        setError("Please provide at least 2 options.");
+        setLoading(false);
+        return;
+      }
+      if (!correctAnswer.trim() || !cleanOpts.includes(correctAnswer)) {
+        setError("Please select a valid correct answer option.");
+        setLoading(false);
+        return;
+      }
+      payload = {
+        type_of_section: "MCQ",
+        question,
+        options: cleanOpts,
+        correct_answer: correctAnswer,
+      };
+    } else if (draftType === "InfoPanel") {
+      if (!title.trim() || !content.trim()) {
+        setError("Title and content are required for Info Panel.");
+        setLoading(false);
+        return;
+      }
+      payload = {
+        type_of_section: "InfoPanel",
+        title,
+        content,
+      };
+    } else {
+      // FillInTheBlank
+      if (!sentence.trim() || !correctAnswer.trim()) {
+        setError("Sentence and correct answer are required.");
+        setLoading(false);
+        return;
+      }
+      payload = {
+        type_of_section: "FillInTheBlank",
+        sentence,
+        correct_answer: correctAnswer,
+      };
+    }
 
-      // Perform POST Request only on "Create Section" button click
-      const newSection = await createSection(moduleId, payload, accessToken);
+    try {
+      const newSec = await createSection(moduleId, payload, accessToken);
 
-      const updated = [...sections, newSection];
+      const updated = [...sections, newSec];
       setSections(updated);
       setActiveSectionIdx(updated.length - 1);
       setDraftType(null);
@@ -178,31 +160,58 @@ export default function ModuleSectionsManager({
   const activeSection =
     activeSectionIdx !== null ? sections[activeSectionIdx] : null;
 
-  return (
-    <div className="flex flex-col lg:flex-row min-h-[640px] rounded-2xl border border-slate-800 bg-[#0F172A] text-slate-100 shadow-2xl overflow-hidden backdrop-blur-md">
-      {/* ---------------- SIDEBAR ---------------- */}
-      <aside className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-slate-800 bg-[#0B0F19]/80 p-5 flex flex-col justify-between shrink-0">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">
-              Sections List
-            </span>
-            <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
-              {sections.length}
-            </span>
-          </div>
+  const getBadgeStyle = (type: SectionType, isActive: boolean) => {
+    switch (type) {
+      case "Video":
+        return isActive
+          ? "border-blue-400 text-blue-300"
+          : "border-blue-600 text-blue-700 bg-blue-50";
+      case "MCQ":
+        return isActive
+          ? "border-amber-400 text-amber-300"
+          : "border-amber-600 text-amber-700 bg-amber-50";
+      case "InfoPanel":
+        return isActive
+          ? "border-emerald-400 text-emerald-300"
+          : "border-emerald-600 text-emerald-700 bg-emerald-50";
+      case "FillInTheBlank":
+        return isActive
+          ? "border-purple-400 text-purple-300"
+          : "border-purple-600 text-purple-700 bg-purple-50";
+    }
+  };
 
-          <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+  const getSectionTitle = (sec: SectionItem) => {
+    switch (sec.type_of_section) {
+      case "Video":
+        return "Video Lesson";
+      case "MCQ":
+        return sec.question || "MCQ Quiz";
+      case "InfoPanel":
+        return sec.title || "Information Panel";
+      case "FillInTheBlank":
+        return sec.sentence || "Fill in the Blank";
+    }
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row min-h-[580px] border border-[#0B0E14] bg-white">
+      {/* ---------------- SIDEBAR ---------------- */}
+      <aside className="w-full md:w-80 border-b md:border-b-0 md:border-r border-[#0B0E14] bg-slate-50 flex flex-col justify-between p-4 shrink-0">
+        <div>
+          <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-500 mb-4 px-2">
+            Module Sections
+          </h2>
+
+          <div className="flex flex-col gap-2">
             {sections.length === 0 && !draftType && (
-              <div className="p-6 text-center border border-dashed border-slate-800 rounded-xl text-xs text-slate-500">
-                No sections built yet. Click the + button below to start.
-              </div>
+              <p className="text-xs text-slate-500 px-2 py-4 italic">
+                No sections created yet. Press the + button below to add one.
+              </p>
             )}
 
             {sections.map((sec, idx) => {
               const isActive = activeSectionIdx === idx && !draftType;
-              const config = SECTION_TYPE_CONFIG[sec.type_of_section];
-
               return (
                 <button
                   key={sec.id || idx}
@@ -210,33 +219,30 @@ export default function ModuleSectionsManager({
                     setActiveSectionIdx(idx);
                     setDraftType(null);
                   }}
-                  className={`w-full text-left p-3.5 rounded-xl border transition-all duration-200 cursor-pointer flex items-center justify-between group ${
+                  className={`w-full text-left px-3 py-2.5 flex items-center justify-between border transition-all cursor-pointer ${
                     isActive
-                      ? "bg-slate-800/90 border-slate-600 text-white shadow-lg shadow-black/20"
-                      : "bg-slate-900/40 border-slate-800/80 text-slate-300 hover:bg-slate-800/50 hover:border-slate-700"
+                      ? "bg-[#0B0E14] text-white border-[#0B0E14]"
+                      : "bg-white text-[#0B0E14] border-slate-200 hover:border-slate-400"
                   }`}
                 >
-                  <div className="flex items-center gap-3 truncate pr-2">
-                    <span className="text-base">{config?.icon || "📄"}</span>
-                    <div className="truncate">
-                      <p className="text-xs font-semibold truncate leading-snug">
-                        {sec.title ||
-                          sec.question ||
-                          sec.sentence_with_blank ||
-                          (sec.type_of_section === "Video"
-                            ? "Video Lesson"
-                            : "Section")}
-                      </p>
-                      <span className="text-[10px] font-mono text-slate-500">
-                        #{idx + 1} • {sec.type_of_section}
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2 truncate pr-2">
+                    <span className="font-mono text-xs opacity-70">
+                      #{idx + 1}
+                    </span>
+                    <span className="text-sm font-medium truncate">
+                      {getSectionTitle(sec)}
+                    </span>
                   </div>
 
                   <span
-                    className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md border ${config.badgeBg} ${config.badgeText}`}
+                    className={`font-mono text-[9px] uppercase font-bold px-1.5 py-0.5 border shrink-0 ${getBadgeStyle(
+                      sec.type_of_section,
+                      isActive,
+                    )}`}
                   >
-                    {sec.type_of_section}
+                    {sec.type_of_section === "FillInTheBlank"
+                      ? "FITB"
+                      : sec.type_of_section}
                   </span>
                 </button>
               );
@@ -244,82 +250,97 @@ export default function ModuleSectionsManager({
           </div>
         </div>
 
-        {/* PLUS BUTTON & SMALL MODAL / POPOVER */}
-        <div className="relative mt-4 pt-4 border-t border-slate-800" ref={menuRef}>
-          {/* POPUP SELECTION MODAL */}
+        {/* PLUS BUTTON & POPOVER MODAL */}
+        <div className="relative mt-6" ref={menuRef}>
           {showTypeMenu && (
-            <div className="absolute bottom-full left-0 mb-3 w-full bg-[#1E293B] border border-slate-700 rounded-xl shadow-2xl p-2 space-y-1 z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
-              <div className="px-3 py-1.5 border-b border-slate-700/60 mb-1">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+            <div className="absolute bottom-full left-0 mb-2 w-full bg-white border border-[#0B0E14] shadow-lg p-2 z-50 space-y-1">
+              <div className="px-2 py-1 border-b border-slate-200 mb-1">
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Select Section Type
                 </span>
               </div>
 
-              {(Object.keys(SECTION_TYPE_CONFIG) as SectionType[]).map((typeKey) => {
-                const item = SECTION_TYPE_CONFIG[typeKey];
-                return (
-                  <button
-                    key={typeKey}
-                    onClick={() => handleSelectTypeToCreate(typeKey)}
-                    className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-700/60 transition-colors flex items-center gap-3 cursor-pointer group"
-                  >
-                    <span className="text-lg">{item.icon}</span>
-                    <div>
-                      <p className="text-xs font-bold text-slate-200 group-hover:text-white">
-                        {item.label}
-                      </p>
-                      <p className="text-[10px] text-slate-400">{item.desc}</p>
-                    </div>
-                  </button>
-                );
-              })}
+              <button
+                type="button"
+                onClick={() => handleSelectTypeToCreate("Video")}
+                className="w-full text-left px-3 py-2 text-xs font-mono font-bold uppercase hover:bg-slate-100 flex items-center gap-2 cursor-pointer border border-transparent hover:border-slate-300"
+              >
+                <span>📹</span>
+                <span>Video Section</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectTypeToCreate("MCQ")}
+                className="w-full text-left px-3 py-2 text-xs font-mono font-bold uppercase hover:bg-slate-100 flex items-center gap-2 cursor-pointer border border-transparent hover:border-slate-300"
+              >
+                <span>📝</span>
+                <span>MCQ Section</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectTypeToCreate("InfoPanel")}
+                className="w-full text-left px-3 py-2 text-xs font-mono font-bold uppercase hover:bg-slate-100 flex items-center gap-2 cursor-pointer border border-transparent hover:border-slate-300"
+              >
+                <span>💡</span>
+                <span>Info Panel</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectTypeToCreate("FillInTheBlank")}
+                className="w-full text-left px-3 py-2 text-xs font-mono font-bold uppercase hover:bg-slate-100 flex items-center gap-2 cursor-pointer border border-transparent hover:border-slate-300"
+              >
+                <span>✏️</span>
+                <span>Fill in the Blank</span>
+              </button>
             </div>
           )}
 
-          {/* MAIN PLUS BUTTON */}
           <button
+            type="button"
             onClick={() => setShowTypeMenu((prev) => !prev)}
-            className="w-full py-3 px-4 rounded-xl font-mono text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 flex items-center justify-center gap-2 font-mono text-xs font-bold uppercase tracking-wider bg-white text-[#0B0E14] border border-[#0B0E14] hover:bg-[#0B0E14] hover:text-white transition-all cursor-pointer"
           >
-            <span className="text-lg leading-none">+</span>
+            <span className="text-base leading-none">+</span>
             <span>Add Section</span>
           </button>
         </div>
       </aside>
 
-      {/* ---------------- MAIN BUILDER VIEW ---------------- */}
-      <main className="flex-1 p-6 lg:p-10 bg-[#0B0F19]/40 flex flex-col justify-between">
+      {/* ---------------- MAIN CONTENT AREA ---------------- */}
+      <main className="flex-1 p-6 md:p-8">
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono">
-            ⚠️ {error}
+          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 text-sm font-medium">
+            {error}
           </div>
         )}
 
         {draftType ? (
-          /* CREATE FORM (POST Fired ONLY when Create Section Button clicked) */
+          /* SECTION CREATION FORM */
           <form
             onSubmit={handleCreateSectionSubmit}
-            className="max-w-xl space-y-6 animate-in fade-in duration-200"
+            className="max-w-xl space-y-6"
           >
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <span className="text-2xl">
-                {SECTION_TYPE_CONFIG[draftType].icon}
+            <div>
+              <span className="font-mono text-xs font-bold uppercase text-slate-500">
+                New Section Draft
               </span>
-              <div>
-                <h3 className="text-xl font-bold text-white">
-                  New {SECTION_TYPE_CONFIG[draftType].label}
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Configure content fields below before adding.
-                </p>
-              </div>
+              <h3 className="text-2xl font-bold text-[#0B0E14] mt-0.5">
+                Create{" "}
+                {draftType === "FillInTheBlank"
+                  ? "Fill in the Blank"
+                  : draftType}{" "}
+                Section
+              </h3>
             </div>
 
-            {/* Dynamic Inputs based on draftType */}
+            {/* Video Inputs */}
             {draftType === "Video" && (
-              <div className="space-y-2">
-                <label className="text-xs font-mono font-semibold text-slate-300 uppercase">
-                  Video URL
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs font-bold uppercase text-slate-700">
+                  Video URL *
                 </label>
                 <input
                   type="url"
@@ -327,16 +348,17 @@ export default function ModuleSectionsManager({
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://youtube.com/watch?v=..."
-                  className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-all"
+                  className="px-4 py-3 border border-[#0B0E14] text-sm focus:outline-none"
                 />
               </div>
             )}
 
+            {/* MCQ Inputs */}
             {draftType === "MCQ" && (
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-mono font-semibold text-slate-300 uppercase">
-                    Question
+                <div className="flex flex-col gap-2">
+                  <label className="font-mono text-xs font-bold uppercase text-slate-700">
+                    Question *
                   </label>
                   <input
                     type="text"
@@ -344,13 +366,13 @@ export default function ModuleSectionsManager({
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     placeholder="e.g. What is Web3?"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500"
+                    className="px-4 py-3 border border-[#0B0E14] text-sm focus:outline-none"
                   />
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-xs font-mono font-semibold text-slate-300 uppercase">
-                    Options (Select radio for correct answer)
+                  <label className="font-mono text-xs font-bold uppercase text-slate-700">
+                    Options * (Select radio for correct answer)
                   </label>
                   {options.map((opt, idx) => (
                     <div key={idx} className="flex items-center gap-3">
@@ -360,7 +382,7 @@ export default function ModuleSectionsManager({
                         checked={correctAnswer === opt && opt !== ""}
                         onChange={() => setCorrectAnswer(opt)}
                         disabled={!opt.trim()}
-                        className="w-4 h-4 accent-blue-500 cursor-pointer"
+                        className="cursor-pointer"
                       />
                       <input
                         type="text"
@@ -369,17 +391,20 @@ export default function ModuleSectionsManager({
                         onChange={(e) => {
                           const val = e.target.value;
                           handleOptionChange(idx, val);
-                          if (correctAnswer === options[idx]) setCorrectAnswer(val);
+                          if (correctAnswer === options[idx]) {
+                            setCorrectAnswer(val);
+                          }
                         }}
                         placeholder={`Option ${idx + 1}`}
-                        className="flex-1 px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-800 text-sm text-white focus:outline-none focus:border-blue-500"
+                        className="flex-1 px-3 py-2 border border-slate-300 text-sm focus:outline-none focus:border-[#0B0E14]"
                       />
                     </div>
                   ))}
+
                   <button
                     type="button"
                     onClick={() => setOptions((prev) => [...prev, ""])}
-                    className="text-xs font-mono text-blue-400 hover:underline cursor-pointer pt-1"
+                    className="font-mono text-xs text-slate-600 hover:text-black underline cursor-pointer mt-1"
                   >
                     + Add Option
                   </button>
@@ -387,118 +412,118 @@ export default function ModuleSectionsManager({
               </div>
             )}
 
-            {draftType === "FillInBlank" && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-mono font-semibold text-slate-300 uppercase">
-                    Sentence Prompt
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={sentenceWithBlank}
-                    onChange={(e) => setSentenceWithBlank(e.target.value)}
-                    placeholder="e.g. Solidity is used to write smart ____."
-                    className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-sm text-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-mono font-semibold text-slate-300 uppercase">
-                    Correct Answer
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={blankAnswer}
-                    onChange={(e) => setBlankAnswer(e.target.value)}
-                    placeholder="e.g. contracts"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-sm text-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-            )}
-
+            {/* Info Panel Inputs */}
             {draftType === "InfoPanel" && (
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-mono font-semibold text-slate-300 uppercase">
-                    Panel Title
+                <div className="flex flex-col gap-2">
+                  <label className="font-mono text-xs font-bold uppercase text-slate-700">
+                    Panel Title *
                   </label>
                   <input
                     type="text"
                     required
-                    value={infoTitle}
-                    onChange={(e) => setInfoTitle(e.target.value)}
-                    placeholder="e.g. Key Concept Breakdown"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-sm text-white focus:outline-none focus:border-blue-500"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g. Key Concept: Immutability"
+                    className="px-4 py-3 border border-[#0B0E14] text-sm focus:outline-none"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-mono font-semibold text-slate-300 uppercase">
-                    Body Content
+
+                <div className="flex flex-col gap-2">
+                  <label className="font-mono text-xs font-bold uppercase text-slate-700">
+                    Content *
                   </label>
                   <textarea
                     required
-                    rows={4}
-                    value={infoBody}
-                    onChange={(e) => setInfoBody(e.target.value)}
-                    placeholder="Detailed explanation..."
-                    className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-sm text-white focus:outline-none focus:border-blue-500"
+                    rows={5}
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Detailed note, tips, or core explanation for students..."
+                    className="px-4 py-3 border border-[#0B0E14] text-sm focus:outline-none resize-y"
                   />
                 </div>
               </div>
             )}
 
-            {/* FORM ACTION BUTTONS */}
-            <div className="flex gap-3 pt-4 border-t border-slate-800">
+            {/* Fill in the Blank Inputs */}
+            {draftType === "FillInTheBlank" && (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-2">
+                  <label className="font-mono text-xs font-bold uppercase text-slate-700">
+                    Sentence / Statement *
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={sentence}
+                    onChange={(e) => setSentence(e.target.value)}
+                    placeholder="e.g. React uses a _____ DOM to optimize rendering performance."
+                    className="px-4 py-3 border border-[#0B0E14] text-sm focus:outline-none resize-y"
+                  />
+                  <span className="text-[11px] font-mono text-slate-500">
+                    Tip: Use underscores (e.g. _____) where the blank space
+                    should appear.
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="font-mono text-xs font-bold uppercase text-slate-700">
+                    Expected Correct Answer *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={correctAnswer}
+                    onChange={(e) => setCorrectAnswer(e.target.value)}
+                    placeholder="e.g. virtual"
+                    className="px-4 py-3 border border-[#0B0E14] text-sm focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ACTION BUTTONS */}
+            <div className="flex gap-3 pt-4 border-t border-slate-200">
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-mono text-xs font-bold uppercase tracking-wider hover:from-blue-500 hover:to-indigo-500 transition-all cursor-pointer shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                className="px-6 py-3 bg-[#0B0E14] text-white font-mono text-xs font-bold uppercase hover:bg-slate-800 transition-all cursor-pointer disabled:opacity-50"
               >
-                {loading ? "Creating Section..." : "Create Section"}
+                {loading ? "Creating..." : "Create Section"}
               </button>
               <button
                 type="button"
                 onClick={() => setDraftType(null)}
-                className="px-6 py-3 rounded-xl border border-slate-700 text-slate-300 font-mono text-xs font-bold uppercase hover:bg-slate-800 transition-all cursor-pointer"
+                className="px-6 py-3 border border-slate-300 text-slate-700 font-mono text-xs font-bold uppercase hover:bg-slate-100 transition-all cursor-pointer"
               >
                 Cancel
               </button>
             </div>
           </form>
         ) : activeSection ? (
-          /* READ-ONLY PREVIEW FOR SELECTED SECTION */
-          <div className="space-y-6 max-w-2xl animate-in fade-in duration-150">
-            <div className="border-b border-slate-800 pb-4">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
+          /* READ-ONLY VIEW */
+          <div className="space-y-6">
+            <div className="border-b border-slate-200 pb-4">
+              <span className="font-mono text-xs font-bold uppercase text-slate-500">
                 {activeSection.type_of_section} Section
               </span>
-              <h3 className="text-2xl font-bold text-white mt-1">
-                {activeSection.title ||
-                  activeSection.question ||
-                  activeSection.sentence_with_blank ||
-                  "Section Overview"}
+              <h3 className="text-2xl font-bold text-[#0B0E14] mt-1">
+                {getSectionTitle(activeSection)}
               </h3>
             </div>
 
             {activeSection.type_of_section === "Video" && (
-              <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-2 font-mono text-xs">
-                <p className="text-slate-400 font-bold">VIDEO LINK:</p>
-                <a
-                  href={activeSection.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-blue-400 underline break-all hover:text-blue-300"
-                >
+              <div className="p-4 bg-slate-50 border border-slate-200 font-mono text-xs space-y-2">
+                <span className="font-bold text-slate-600">Video URL:</span>
+                <p className="text-blue-600 underline break-all">
                   {activeSection.url}
-                </a>
+                </p>
               </div>
             )}
 
             {activeSection.type_of_section === "MCQ" && (
-              <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-4">
-                <p className="text-sm font-semibold text-white">
+              <div className="p-4 bg-slate-50 border border-slate-200 space-y-4">
+                <p className="font-semibold text-sm text-[#0B0E14]">
                   Q: {activeSection.question}
                 </p>
                 <div className="space-y-2">
@@ -507,16 +532,16 @@ export default function ModuleSectionsManager({
                     return (
                       <div
                         key={oIdx}
-                        className={`p-3 rounded-lg border text-xs font-mono flex items-center justify-between ${
+                        className={`p-3 border text-xs font-mono flex items-center justify-between ${
                           isCorrect
-                            ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-300"
-                            : "bg-slate-950 border-slate-800 text-slate-400"
+                            ? "bg-emerald-50 border-emerald-500 text-emerald-900 font-bold"
+                            : "bg-white border-slate-200 text-slate-700"
                         }`}
                       >
                         <span>{opt}</span>
                         {isCorrect && (
-                          <span className="text-[10px] uppercase font-bold text-emerald-400">
-                            ✓ Correct
+                          <span className="text-[10px] uppercase tracking-wide bg-emerald-600 text-white px-2 py-0.5 rounded-sm">
+                            Correct Answer
                           </span>
                         )}
                       </div>
@@ -526,40 +551,47 @@ export default function ModuleSectionsManager({
               </div>
             )}
 
-            {activeSection.type_of_section === "FillInBlank" && (
-              <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
-                <p className="text-sm text-slate-200">
-                  <span className="font-mono text-xs text-slate-500 uppercase block mb-1">
-                    Prompt:
-                  </span>
-                  {activeSection.sentence_with_blank}
-                </p>
-                <p className="text-xs font-mono text-emerald-400 font-bold">
-                  Answer: {activeSection.correct_answer}
+            {activeSection.type_of_section === "InfoPanel" && (
+              <div className="p-5 bg-emerald-50/50 border border-emerald-600 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-700">💡</span>
+                  <h4 className="font-mono text-xs font-bold uppercase text-emerald-900">
+                    {activeSection.title}
+                  </h4>
+                </div>
+                <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
+                  {activeSection.content}
                 </p>
               </div>
             )}
 
-            {activeSection.type_of_section === "InfoPanel" && (
-              <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                <h4 className="font-bold text-white text-base">
-                  {activeSection.title}
-                </h4>
-                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
-                  {activeSection.body_text}
-                </p>
+            {activeSection.type_of_section === "FillInTheBlank" && (
+              <div className="p-5 bg-purple-50/50 border border-purple-600 space-y-4">
+                <div>
+                  <span className="font-mono text-[10px] font-bold uppercase text-purple-700">
+                    Fill in the Blank Prompt
+                  </span>
+                  <p className="text-base font-medium text-[#0B0E14] mt-1 leading-relaxed">
+                    {activeSection.sentence}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-white border border-purple-300 font-mono text-xs flex items-center justify-between">
+                  <span className="text-slate-500 uppercase font-bold">
+                    Correct Answer:
+                  </span>
+                  <span className="font-bold text-purple-900 bg-purple-100 px-2 py-0.5 border border-purple-300">
+                    {activeSection.correct_answer}
+                  </span>
+                </div>
               </div>
             )}
           </div>
         ) : (
           /* EMPTY STATE */
           <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-500">
-            <span className="text-4xl mb-3">🧩</span>
-            <p className="text-sm font-semibold text-slate-300">
-              No section selected
-            </p>
-            <p className="text-xs text-slate-500 mt-1 max-w-xs">
-              Pick a section from the sidebar to inspect or click the "+" button to add a new section.
+            <p className="text-sm font-medium">
+              Select a section on the left or click "+" to create one.
             </p>
           </div>
         )}
