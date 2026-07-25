@@ -1,3 +1,4 @@
+import json
 import re
 import secrets
 import time
@@ -14,6 +15,7 @@ from siwe import SiweMessage, generate_nonce
 from web3 import Web3
 from django.conf import settings
 from core.models import Module
+import os
 
 
 # Helper to recover signer from a message+signature
@@ -81,37 +83,93 @@ def verify_signature(request):
 
 
 def _get_web3_and_contract():
-    w3 = Web3(Web3.HTTPProvider(settings.WEB3_PROVIDER_URL))
+    w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URL")))
+    
+    # Get ABI from Django settings (loaded from file) or environment variable
+    abi = settings.COURSE_MODULE_SOULBOUND_ABI
+    if not abi or abi == []:
+        abi_json_str = os.getenv("COURSE_MODULE_SOULBOUND_ABI")
+        if abi_json_str:
+            try:
+                abi = json.loads(abi_json_str)
+            except json.JSONDecodeError as e:
+                raise ValueError(f"COURSE_MODULE_SOULBOUND_ABI environment variable contains invalid JSON: {e}")
+        else:
+            raise ValueError(
+                "COURSE_MODULE_SOULBOUND_ABI not found in settings or environment. "
+                "On deployed servers, set COURSE_MODULE_SOULBOUND_ABI as an environment variable with the contract ABI as JSON."
+            )
+    
+    if not abi:
+        raise ValueError("COURSE_MODULE_SOULBOUND_ABI is empty")
+    
     contract = w3.eth.contract(
-        address=Web3.to_checksum_address(settings.COURSE_MODULE_SOULBOUND_ADDRESS),
-        abi=settings.COURSE_MODULE_SOULBOUND_ABI,
+        address=Web3.to_checksum_address(os.getenv("COURSE_MODULE_SOULBOUND_ADDRESS")),
+        abi=abi,
     )
     return w3, contract
 
 
 def _mint_module_completion_transaction(student: str, course_name: str, module_name: str) -> str:
+    # Validate required environment variables
+    required_vars = {
+        "WEB3_PROVIDER_URL": os.getenv("WEB3_PROVIDER_URL"),
+        "COURSE_MODULE_SOULBOUND_ADDRESS": os.getenv("COURSE_MODULE_SOULBOUND_ADDRESS"),
+        "OWNER_ADDRESS": os.getenv("OWNER_ADDRESS"),
+        "OWNER_PRIVATE_KEY": os.getenv("OWNER_PRIVATE_KEY"),
+    }
+    
+    missing_vars = [k for k, v in required_vars.items() if not v]
+    if missing_vars:
+        raise ValueError(f"Missing environment variables: {', '.join(missing_vars)}")
+    
     w3, contract = _get_web3_and_contract()
-    owner_address = Web3.to_checksum_address(settings.OWNER_ADDRESS)
-    owner_key = settings.OWNER_PRIVATE_KEY
+    owner_address = Web3.to_checksum_address(os.getenv("OWNER_ADDRESS"))
+    owner_key = os.getenv("OWNER_PRIVATE_KEY")
+
+    # Ensure student address is checksum format
+    student = Web3.to_checksum_address(student)
 
     func = contract.functions.mintModuleCompletion(student, course_name, module_name)
+    print(func)
     try:
         gas_est = func.estimateGas({"from": owner_address})
         gas_limit = int(gas_est * 1.3)
-    except Exception:
+    except Exception as e:
+        print(f"Gas estimation failed: {e}")
         gas_limit = 300000
 
     nonce = w3.eth.get_transaction_count(owner_address)
-    tx = func.buildTransaction({
+    
+    # Build base transaction dict - DO NOT include gasPrice initially
+    tx_dict = {
         "from": owner_address,
         "nonce": nonce,
         "gas": gas_limit,
-        "gasPrice": w3.eth.gas_price,
         "chainId": w3.eth.chain_id,
-    })
+    }
+    
+    # Check if network supports EIP-1559
+    try:
+        latest_block = w3.eth.get_block('latest')
+        if 'baseFeePerGas' in latest_block:
+            # EIP-1559 network - use maxFeePerGas and maxPriorityFeePerGas
+            base_fee = latest_block['baseFeePerGas']
+            max_priority_fee = w3.eth.max_priority_fee
+            tx_dict["maxPriorityFeePerGas"] = max_priority_fee
+            tx_dict["maxFeePerGas"] = base_fee * 2 + max_priority_fee
+        else:
+            # Legacy network - use gasPrice
+            tx_dict["gasPrice"] = w3.eth.gas_price
+    except Exception as e:
+        print(f"Error detecting EIP-1559: {e}, falling back to gasPrice")
+        # Fallback to legacy gasPrice
+        tx_dict["gasPrice"] = w3.eth.gas_price
+    
+    tx = func.build_transaction(tx_dict)
 
     signed = w3.eth.account.sign_transaction(tx, private_key=owner_key)
-    tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
+    tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
     return tx_hash.hex()
 
 
@@ -166,3 +224,49 @@ def mint_module_completion_by_id(request):
         return Response({"error": str(e)}, status=500)
 
 
+@api_view(["POST"])
+def register_course(request):
+    """Register a course and its modules in the contract.
+    
+    Body: {
+      "course_name": "Course Name",
+      "module_names": ["Module 1", "Module 2", ...]
+    }
+    """
+    course_name = request.data.get("course_name")
+    module_names = request.data.get("module_names", [])
+    
+    if not course_name or not module_names:
+        return Response({"error": "course_name and module_names are required"}, status=400)
+    
+    try:
+        w3, contract = _get_web3_and_contract()
+        owner_address = Web3.to_checksum_address(os.getenv("OWNER_ADDRESS"))
+        owner_key = os.getenv("OWNER_PRIVATE_KEY")
+        
+        func = contract.functions.register_course(course_name, module_names)
+        nonce = w3.eth.get_transaction_count(owner_address)
+        
+        tx_dict = {
+            "from": owner_address,
+            "nonce": nonce,
+            "chainId": w3.eth.chain_id,
+        }
+        
+        # Add gas params (EIP-1559 or legacy)
+        latest_block = w3.eth.get_block('latest')
+        if 'baseFeePerGas' in latest_block:
+            base_fee = latest_block['baseFeePerGas']
+            max_priority_fee = w3.eth.max_priority_fee
+            tx_dict["maxPriorityFeePerGas"] = max_priority_fee
+            tx_dict["maxFeePerGas"] = base_fee * 2 + max_priority_fee
+        else:
+            tx_dict["gasPrice"] = w3.eth.gas_price
+        
+        tx = func.build_transaction(tx_dict)
+        signed = w3.eth.account.sign_transaction(tx, private_key=owner_key)
+        tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
+        
+        return Response({"tx_hash": tx_hash.hex()}, status=202)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)

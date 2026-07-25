@@ -174,7 +174,7 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-ABI_PATH = Path(__file__).resolve().parent.parent.parent / "contract" / "out" / "MintPartialSoulboundNFT.sol" / "CourseModuleSoulbound.json"
+ABI_PATH = Path(__file__).resolve().parent.parent.parent / "contract" / "out" / "courseProgress.sol" / "CourseProgressSoulbound.json"
 if ABI_PATH.exists():
     COURSE_MODULE_SOULBOUND_ABI = json.loads(ABI_PATH.read_text()).get("abi", [])
 else:
