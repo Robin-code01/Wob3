@@ -391,3 +391,41 @@ def check_module_completion(request, module_id):
         'is_complete': True, 
         'message': 'Module complete. Token minting is a work in progress.'
     }, status=200)
+# def get_certificate(request, course_id):
+#     """
+#     GET /courses/<course_id>/get_certificate/  — Check if the user has completed all modules and is eligible for a certificate.
+
+#     Query params:
+#         public_key (str): The user's public key.
+#     """
+#     public_key = request.GET.get('public_key')
+#     if not public_key:
+#         return Response({'error': 'public_key query parameter is required'}, status=400)
+
+#     try:
+#         user = User.objects.get(public_key=public_key.lower())
+#     except User.DoesNotExist:
+#         return Response({'error': 'User not found'}, status=404)
+
+#     try:
+#         course = Course.objects.get(course_id=course_id)
+#     except Course.DoesNotExist:
+#         return Response({'error': 'Course not found'}, status=404)
+
+#     # Check if the user is enrolled in the course
+#     if not user.courses_in_progress.filter(course_id=course_id).exists():
+#         return Response({'error': 'User is not enrolled in this course'}, status=403)
+
+#     # Check if the user has completed all modules
+#     modules = course.modules.all()
+#     for module in modules:
+#         sections = module.sections.all()
+#         for section in sections:
+#             answer = Answer.objects.filter(user_id=user, section_id=section).first()
+#             if not answer or answer.is_correct == 0:
+#                 return Response({'eligible_for_certificate': False}, status=200)
+
+#     # Mint the course completion certificate NFT to the user's wallet address
+#     # (This would involve calling the smart contract's mint function, which is not shown here
+
+#     return Response({'eligible_for_certificate': True}, status=200)

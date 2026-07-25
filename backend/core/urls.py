@@ -12,4 +12,5 @@ urlpatterns = [
     path('sections/<int:section_id>/answer/', views.submit_answer, name='submit_answer'),
     path('users/<str:public_key>/courses/', views.user_courses, name='user_courses'),
     path('enroll/', views.enroll, name='enroll'),
+    path("courses/<int:course_id>/get_certificate/", views.get_certificate, name="get_certificate"),
 ]
