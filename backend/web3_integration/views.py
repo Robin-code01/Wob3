@@ -131,6 +131,7 @@ def _mint_module_completion_transaction(student: str, course_name: str, module_n
     student = Web3.to_checksum_address(student)
 
     func = contract.functions.mintModuleCompletion(student, course_name, module_name)
+    print(func)
     try:
         gas_est = func.estimateGas({"from": owner_address})
         gas_limit = int(gas_est * 1.3)
@@ -165,7 +166,7 @@ def _mint_module_completion_transaction(student: str, course_name: str, module_n
         # Fallback to legacy gasPrice
         tx_dict["gasPrice"] = w3.eth.gas_price
     
-    tx = func.buildTransaction(tx_dict)
+    tx = func.build_transaction(tx_dict)
 
     signed = w3.eth.account.sign_transaction(tx, private_key=owner_key)
     tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
