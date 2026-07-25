@@ -15,6 +15,7 @@ contract CourseProgressSoulbound is ERC721, Ownable {
 
     mapping(bytes32 => string) public courseNames;
     mapping(bytes32 => bytes32[]) private courseModules;
+    mapping(bytes32 => mapping(bytes32 => string)) public courseModuleNames;
     mapping(bytes32 => mapping(bytes32 => bool)) public courseModuleRequired;
 
     mapping(address => mapping(bytes32 => mapping(bytes32 => bool))) public moduleCompleted;
@@ -54,6 +55,7 @@ contract CourseProgressSoulbound is ERC721, Ownable {
             bytes32 moduleId = _moduleId(moduleNames[i]);
             require(!courseModuleRequired[courseId][moduleId], "Duplicate module");
             courseModuleRequired[courseId][moduleId] = true;
+            courseModuleNames[courseId][moduleId] = moduleNames[i];
             courseModules[courseId].push(moduleId);
         }
 
@@ -98,10 +100,13 @@ contract CourseProgressSoulbound is ERC721, Ownable {
 
     function getCourseModules(string calldata courseName) external view returns (string[] memory) {
         bytes32 courseId = _courseId(courseName);
+        require(bytes(courseNames[courseId]).length != 0, "Course not registered");
+
         uint256 count = courseModules[courseId].length;
         string[] memory names = new string[](count);
         for (uint256 i = 0; i < count; i++) {
-            names[i] = string(abi.encodePacked(courseModules[courseId][i]));
+            bytes32 moduleId = courseModules[courseId][i];
+            names[i] = courseModuleNames[courseId][moduleId];
         }
         return names;
     }

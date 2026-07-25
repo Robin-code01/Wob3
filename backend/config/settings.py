@@ -128,10 +128,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 import os
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "https://wob3.onrender.com",
-]
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "https://wob3.onrender.com",
+# ]
 
 CORS_ALLOW_CREDENTIALS = True
 
