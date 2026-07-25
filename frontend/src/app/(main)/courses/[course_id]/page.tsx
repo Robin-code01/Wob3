@@ -2,7 +2,13 @@ import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getCourseById, getCourseModules, getEnrolledCourses, Course } from "@/lib/courses";
+import {
+  getCourseById,
+  getCourseModules,
+  getEnrolledCourses,
+  checkModuleCompletion,
+  Course,
+} from "@/lib/courses";
 import EnrollButton from "@/components/course/enroll-button";
 
 const DEFAULT_IMAGES = [
@@ -15,14 +21,14 @@ const DEFAULT_IMAGES = [
 
 function getCourseImage(course: Course, defaultImages: string[]) {
   if (course.image) return course.image;
-  
+
   const rawId = course.course_id ?? course.id ?? course.title ?? "0";
   const num = typeof rawId === "number" ? rawId : parseInt(String(rawId), 10);
-  
+
   if (!isNaN(num)) {
     return defaultImages[Math.abs(num) % defaultImages.length];
   }
-  
+
   let hash = 0;
   const str = String(rawId);
   for (let i = 0; i < str.length; i++) {
@@ -87,6 +93,28 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
     return String(enrolledId) === activeCourseId;
   });
 
+  // Check completion status for each module if the user is enrolled
+  const completedModuleMap: Record<string, boolean> = {};
+  if (isEnrolled && userAddress && modules.length > 0) {
+    const completionResults = await Promise.all(
+      modules.map(async (mod) => {
+        const modId = mod.module_id ?? mod.id;
+        if (!modId) return { id: null, isComplete: false };
+        const res = await checkModuleCompletion(modId, userAddress, accessToken);
+        return { id: String(modId), isComplete: Boolean(res.is_complete) };
+      })
+    );
+
+    for (const res of completionResults) {
+      if (res.id) {
+        completedModuleMap[res.id] = res.isComplete;
+      }
+    }
+  }
+
+  const completedCount = Object.values(completedModuleMap).filter(Boolean).length;
+  const isCourseComplete = modules.length > 0 && completedCount === modules.length;
+
   const formattedAuthor = formatAuthor(course.creator_id, course.author);
   const courseImage = getCourseImage(course, DEFAULT_IMAGES);
 
@@ -145,8 +173,16 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
 
             {/* Action Bar */}
             <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-4">
-              <div className="font-mono text-xs text-slate-500">
-                {modules.length} {modules.length === 1 ? "Module" : "Modules"}
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-xs text-slate-500">
+                  {modules.length} {modules.length === 1 ? "Module" : "Modules"}
+                </span>
+
+                {isEnrolled && modules.length > 0 && (
+                  <span className="font-mono text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-1">
+                    {completedCount} / {modules.length} Completed
+                  </span>
+                )}
               </div>
 
               <EnrollButton
@@ -178,12 +214,18 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
           <section className="border border-[#0B0E14] bg-white p-6 sm:p-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-mono text-xs font-bold tracking-widest text-slate-500 uppercase">
-                Course Modules ({modules.length})
+                Course Curriculum ({modules.length})
               </h2>
               {isEnrolled ? (
-                <span className="font-mono text-[11px] font-bold text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 border border-emerald-300">
-                  Unlocked
-                </span>
+                isCourseComplete ? (
+                  <span className="font-mono text-[11px] font-bold text-emerald-800 uppercase bg-emerald-100 px-2 py-0.5 border border-emerald-400">
+                    Course Completed 🏆
+                  </span>
+                ) : (
+                  <span className="font-mono text-[11px] font-bold text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 border border-emerald-300">
+                    Unlocked
+                  </span>
+                )
               ) : (
                 <span className="font-mono text-[11px] font-bold text-slate-500 uppercase bg-slate-100 px-2 py-0.5 border border-slate-300">
                   Locked
@@ -197,28 +239,45 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
                   const modNumber = String(idx + 1).padStart(2, "0");
                   const moduleId = module.module_id ?? module.id ?? (idx + 1);
                   const moduleLink = `/courses/${activeCourseId}/modules/${moduleId}`;
+                  const isCompleted = Boolean(completedModuleMap[String(moduleId)]);
 
                   const content = (
                     <div
-                      className={`p-4 flex items-center justify-between gap-4 bg-white hover:bg-slate-50 transition-colors ${
-                        isEnrolled ? "group cursor-pointer" : ""
-                      }`}
+                      className={`p-4 flex items-center justify-between gap-4 transition-colors ${
+                        isCompleted
+                          ? "bg-emerald-50/40 hover:bg-emerald-50/80"
+                          : "bg-white hover:bg-slate-50"
+                      } ${isEnrolled ? "group cursor-pointer" : ""}`}
                     >
                       <div className="flex items-center gap-4">
-                        <span className="font-mono text-sm font-bold text-primary shrink-0">
-                          {modNumber}
+                        <span
+                          className={`font-mono text-xs font-bold shrink-0 px-2 py-1 border ${
+                            isCompleted
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                              : "bg-slate-100 text-primary border-slate-200"
+                          }`}
+                        >
+                          {isCompleted ? "✓" : modNumber}
                         </span>
                         <div>
-                          <h3 className="font-bold text-sm text-[#0B0E14] group-hover:text-primary transition-colors">
-                            {module.title}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-sm text-[#0B0E14] group-hover:text-primary transition-colors">
+                              {module.title}
+                            </h3>
+                          </div>
                         </div>
                       </div>
 
                       {isEnrolled ? (
-                        <span className="font-mono text-xs text-primary font-semibold shrink-0 group-hover:translate-x-1 transition-transform">
-                          Start Module →
-                        </span>
+                        isCompleted ? (
+                          <span className="font-mono text-xs text-emerald-800 font-bold bg-emerald-100 px-2.5 py-1 border border-emerald-300 shrink-0">
+                            Completed ✓
+                          </span>
+                        ) : (
+                          <span className="font-mono text-xs text-primary font-semibold shrink-0 group-hover:translate-x-1 transition-transform">
+                            Start Module →
+                          </span>
+                        )
                       ) : (
                         <span className="font-mono text-xs text-slate-400 shrink-0">
                           Locked
@@ -268,6 +327,15 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
                   {isEnrolled ? "Enrolled" : "Not Enrolled"}
                 </span>
               </div>
+
+              {isEnrolled && modules.length > 0 && (
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-slate-500 font-mono">Progress</span>
+                  <span className="font-bold text-emerald-700 font-mono">
+                    {completedCount} / {modules.length} Modules
+                  </span>
+                </div>
+              )}
 
               <div className="flex justify-between py-2 border-b border-slate-100">
                 <span className="text-slate-500 font-mono">Total Modules</span>
