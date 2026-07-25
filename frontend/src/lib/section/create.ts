@@ -3,7 +3,8 @@
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
-export type SectionType = "Video" | "MCQ" | "InfoPanel" | "FillInTheBlank";
+// Standardized UI union type vs. exact API type_of_section discriminators
+export type SectionType = "Video" | "MCQ" | "Info_panel" | "Blank";
 
 export interface VideoSectionPayload {
   type_of_section: "Video";
@@ -18,15 +19,14 @@ export interface MCQSectionPayload {
 }
 
 export interface InfoPanelSectionPayload {
-  type_of_section: "InfoPanel";
-  title: string;
+  type_of_section: "Info_panel";
   content: string;
 }
 
 export interface FillInTheBlankSectionPayload {
-  type_of_section: "FillInTheBlank";
-  sentence: string; // e.g. "React uses a _____ DOM for fast rendering."
-  correct_answer: string; // e.g. "virtual"
+  type_of_section: "Blank";
+  content: string; // e.g. "React uses a _____ DOM for fast rendering."
+  answers: string; // e.g. "virtual"
 }
 
 export type CreateSectionPayload =
@@ -42,9 +42,8 @@ export interface SectionItem {
   question?: string;
   options?: string[];
   correct_answer?: string;
-  title?: string;
   content?: string;
-  sentence?: string;
+  answers?: string;
 }
 
 export interface CreateModulePayload {

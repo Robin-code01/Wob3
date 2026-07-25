@@ -23,6 +23,7 @@ export default async function CreateSectionsPage({ params }: PageProps) {
   let initialSections: any[] = [];
   try {
     initialSections = await getModuleSections(module_id);
+    console.log(initialSections);
   } catch (err) {
     console.error("Could not load sections:", err);
   }

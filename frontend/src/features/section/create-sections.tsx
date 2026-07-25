@@ -17,6 +17,7 @@ interface ModuleSectionsManagerProps {
 }
 
 export default function ModuleSectionsManager({
+  courseId,
   moduleId,
   initialSections = [],
   accessToken,
@@ -41,9 +42,8 @@ export default function ModuleSectionsManager({
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState<string[]>(["", "", ""]);
   const [correctAnswer, setCorrectAnswer] = useState("");
-  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [sentence, setSentence] = useState("");
+  const [answers, setAnswers] = useState("");
 
   // Dismiss popover menu when clicking outside
   useEffect(() => {
@@ -67,9 +67,8 @@ export default function ModuleSectionsManager({
     setQuestion("");
     setOptions(["", "", ""]);
     setCorrectAnswer("");
-    setTitle("");
     setContent("");
-    setSentence("");
+    setAnswers("");
   };
 
   const handleOptionChange = (idx: number, value: string) => {
@@ -117,28 +116,27 @@ export default function ModuleSectionsManager({
         options: cleanOpts,
         correct_answer: correctAnswer,
       };
-    } else if (draftType === "InfoPanel") {
-      if (!title.trim() || !content.trim()) {
-        setError("Title and content are required for Info Panel.");
+    } else if (draftType === "Info_panel") {
+      if (!content.trim()) {
+        setError("Content is required for Info Panel.");
         setLoading(false);
         return;
       }
       payload = {
-        type_of_section: "InfoPanel",
-        title,
+        type_of_section: "Info_panel",
         content,
       };
     } else {
-      // FillInTheBlank
-      if (!sentence.trim() || !correctAnswer.trim()) {
-        setError("Sentence and correct answer are required.");
+      // Blank
+      if (!content.trim() || !answers.trim()) {
+        setError("Content sentence and answer are required.");
         setLoading(false);
         return;
       }
       payload = {
-        type_of_section: "FillInTheBlank",
-        sentence,
-        correct_answer: correctAnswer,
+        type_of_section: "Blank",
+        content,
+        answers,
       };
     }
 
@@ -170,11 +168,11 @@ export default function ModuleSectionsManager({
         return isActive
           ? "border-amber-400 text-amber-300"
           : "border-amber-600 text-amber-700 bg-amber-50";
-      case "InfoPanel":
+      case "Info_panel":
         return isActive
           ? "border-emerald-400 text-emerald-300"
           : "border-emerald-600 text-emerald-700 bg-emerald-50";
-      case "FillInTheBlank":
+      case "Blank":
         return isActive
           ? "border-purple-400 text-purple-300"
           : "border-purple-600 text-purple-700 bg-purple-50";
@@ -187,10 +185,10 @@ export default function ModuleSectionsManager({
         return "Video Lesson";
       case "MCQ":
         return sec.question || "MCQ Quiz";
-      case "InfoPanel":
-        return sec.title || "Information Panel";
-      case "FillInTheBlank":
-        return sec.sentence || "Fill in the Blank";
+      case "Info_panel":
+        return sec.content || "Information Panel";
+      case "Blank":
+        return sec.content || "Fill in the Blank";
     }
   };
 
@@ -240,8 +238,8 @@ export default function ModuleSectionsManager({
                       isActive,
                     )}`}
                   >
-                    {sec.type_of_section === "FillInTheBlank"
-                      ? "FITB"
+                    {sec.type_of_section === "Info_panel"
+                      ? "INFO"
                       : sec.type_of_section}
                   </span>
                 </button>
@@ -280,7 +278,7 @@ export default function ModuleSectionsManager({
 
               <button
                 type="button"
-                onClick={() => handleSelectTypeToCreate("InfoPanel")}
+                onClick={() => handleSelectTypeToCreate("Info_panel")}
                 className="w-full text-left px-3 py-2 text-xs font-mono font-bold uppercase hover:bg-slate-100 flex items-center gap-2 cursor-pointer border border-transparent hover:border-slate-300"
               >
                 <span>💡</span>
@@ -289,7 +287,7 @@ export default function ModuleSectionsManager({
 
               <button
                 type="button"
-                onClick={() => handleSelectTypeToCreate("FillInTheBlank")}
+                onClick={() => handleSelectTypeToCreate("Blank")}
                 className="w-full text-left px-3 py-2 text-xs font-mono font-bold uppercase hover:bg-slate-100 flex items-center gap-2 cursor-pointer border border-transparent hover:border-slate-300"
               >
                 <span>✏️</span>
@@ -329,9 +327,11 @@ export default function ModuleSectionsManager({
               </span>
               <h3 className="text-2xl font-bold text-[#0B0E14] mt-0.5">
                 Create{" "}
-                {draftType === "FillInTheBlank"
+                {draftType === "Blank"
                   ? "Fill in the Blank"
-                  : draftType}{" "}
+                  : draftType === "Info_panel"
+                    ? "Info Panel"
+                    : draftType}{" "}
                 Section
               </h3>
             </div>
@@ -413,22 +413,8 @@ export default function ModuleSectionsManager({
             )}
 
             {/* Info Panel Inputs */}
-            {draftType === "InfoPanel" && (
+            {draftType === "Info_panel" && (
               <div className="space-y-4">
-                <div className="flex flex-col gap-2">
-                  <label className="font-mono text-xs font-bold uppercase text-slate-700">
-                    Panel Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Key Concept: Immutability"
-                    className="px-4 py-3 border border-[#0B0E14] text-sm focus:outline-none"
-                  />
-                </div>
-
                 <div className="flex flex-col gap-2">
                   <label className="font-mono text-xs font-bold uppercase text-slate-700">
                     Content *
@@ -438,7 +424,7 @@ export default function ModuleSectionsManager({
                     rows={5}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Detailed note, tips, or core explanation for students..."
+                    placeholder="Provide detailed notes, tips, or core explanations for students..."
                     className="px-4 py-3 border border-[#0B0E14] text-sm focus:outline-none resize-y"
                   />
                 </div>
@@ -446,17 +432,17 @@ export default function ModuleSectionsManager({
             )}
 
             {/* Fill in the Blank Inputs */}
-            {draftType === "FillInTheBlank" && (
+            {draftType === "Blank" && (
               <div className="space-y-4">
                 <div className="flex flex-col gap-2">
                   <label className="font-mono text-xs font-bold uppercase text-slate-700">
-                    Sentence / Statement *
+                    Sentence / Statement Content *
                   </label>
                   <textarea
                     required
                     rows={3}
-                    value={sentence}
-                    onChange={(e) => setSentence(e.target.value)}
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
                     placeholder="e.g. React uses a _____ DOM to optimize rendering performance."
                     className="px-4 py-3 border border-[#0B0E14] text-sm focus:outline-none resize-y"
                   />
@@ -468,13 +454,13 @@ export default function ModuleSectionsManager({
 
                 <div className="flex flex-col gap-2">
                   <label className="font-mono text-xs font-bold uppercase text-slate-700">
-                    Expected Correct Answer *
+                    Expected Answer *
                   </label>
                   <input
                     type="text"
                     required
-                    value={correctAnswer}
-                    onChange={(e) => setCorrectAnswer(e.target.value)}
+                    value={answers}
+                    onChange={(e) => setAnswers(e.target.value)}
                     placeholder="e.g. virtual"
                     className="px-4 py-3 border border-[#0B0E14] text-sm focus:outline-none"
                   />
@@ -505,7 +491,12 @@ export default function ModuleSectionsManager({
           <div className="space-y-6">
             <div className="border-b border-slate-200 pb-4">
               <span className="font-mono text-xs font-bold uppercase text-slate-500">
-                {activeSection.type_of_section} Section
+                {activeSection.type_of_section === "Info_panel"
+                  ? "Info Panel"
+                  : activeSection.type_of_section === "Blank"
+                    ? "Fill in the Blank"
+                    : activeSection.type_of_section}{" "}
+                Section
               </span>
               <h3 className="text-2xl font-bold text-[#0B0E14] mt-1">
                 {getSectionTitle(activeSection)}
@@ -551,12 +542,12 @@ export default function ModuleSectionsManager({
               </div>
             )}
 
-            {activeSection.type_of_section === "InfoPanel" && (
+            {activeSection.type_of_section === "Info_panel" && (
               <div className="p-5 bg-emerald-50/50 border border-emerald-600 space-y-3">
                 <div className="flex items-center gap-2">
                   <span className="text-emerald-700">💡</span>
                   <h4 className="font-mono text-xs font-bold uppercase text-emerald-900">
-                    {activeSection.title}
+                    Information Panel
                   </h4>
                 </div>
                 <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
@@ -565,23 +556,23 @@ export default function ModuleSectionsManager({
               </div>
             )}
 
-            {activeSection.type_of_section === "FillInTheBlank" && (
+            {activeSection.type_of_section === "Blank" && (
               <div className="p-5 bg-purple-50/50 border border-purple-600 space-y-4">
                 <div>
                   <span className="font-mono text-[10px] font-bold uppercase text-purple-700">
-                    Fill in the Blank Prompt
+                    Fill in the Blank Sentence
                   </span>
                   <p className="text-base font-medium text-[#0B0E14] mt-1 leading-relaxed">
-                    {activeSection.sentence}
+                    {activeSection.content}
                   </p>
                 </div>
 
                 <div className="p-3 bg-white border border-purple-300 font-mono text-xs flex items-center justify-between">
                   <span className="text-slate-500 uppercase font-bold">
-                    Correct Answer:
+                    Expected Answer:
                   </span>
                   <span className="font-bold text-purple-900 bg-purple-100 px-2 py-0.5 border border-purple-300">
-                    {activeSection.correct_answer}
+                    {activeSection.answers}
                   </span>
                 </div>
               </div>
