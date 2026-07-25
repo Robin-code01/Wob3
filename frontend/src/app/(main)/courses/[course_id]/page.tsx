@@ -342,6 +342,9 @@ export default async function CourseOverviewPage({
           <MintCourseButton
             courseName={course.title}
             userAddress={userAddress}
+            accessToken={accessToken}
+            isCourseComplete={isCourseComplete}
+            isEnrolled={isEnrolled}
           />
         </div>
 
