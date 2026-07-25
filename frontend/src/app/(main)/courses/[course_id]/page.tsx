@@ -10,6 +10,7 @@ import {
   Course,
 } from "@/lib/courses";
 import EnrollButton from "@/components/course/enroll-button";
+import MintCourseButton from "@/features/course/obtain-certificate";
 
 const DEFAULT_IMAGES = [
   "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=600&q=80",
@@ -50,7 +51,9 @@ type CourseOverviewPageProps = {
   params: Promise<{ course_id: string }>;
 };
 
-export default async function CourseOverviewPage({ params }: CourseOverviewPageProps) {
+export default async function CourseOverviewPage({
+  params,
+}: CourseOverviewPageProps) {
   const session = await auth();
 
   if (!session) {
@@ -64,7 +67,9 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
   const [course, modules, enrolledCourses] = await Promise.all([
     getCourseById(course_id),
     getCourseModules(course_id),
-    userAddress ? getEnrolledCourses(userAddress, accessToken) : Promise.resolve([]),
+    userAddress
+      ? getEnrolledCourses(userAddress, accessToken)
+      : Promise.resolve([]),
   ]);
 
   if (!course) {
@@ -72,7 +77,11 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
       <div className="py-16 text-center space-y-6">
         <h1 className="text-2xl font-bold text-[#0B0E14]">Course Not Found</h1>
         <p className="text-slate-600 text-sm max-w-md mx-auto">
-          Could not load details for course ID <code className="font-mono bg-slate-100 px-1 py-0.5">{course_id}</code>.
+          Could not load details for course ID{" "}
+          <code className="font-mono bg-slate-100 px-1 py-0.5">
+            {course_id}
+          </code>
+          .
         </p>
         <div>
           <Link
@@ -100,9 +109,13 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
       modules.map(async (mod) => {
         const modId = mod.module_id ?? mod.id;
         if (!modId) return { id: null, isComplete: false };
-        const res = await checkModuleCompletion(modId, userAddress, accessToken);
+        const res = await checkModuleCompletion(
+          modId,
+          userAddress,
+          accessToken,
+        );
         return { id: String(modId), isComplete: Boolean(res.is_complete) };
-      })
+      }),
     );
 
     for (const res of completionResults) {
@@ -112,8 +125,10 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
     }
   }
 
-  const completedCount = Object.values(completedModuleMap).filter(Boolean).length;
-  const isCourseComplete = modules.length > 0 && completedCount === modules.length;
+  const completedCount =
+    Object.values(completedModuleMap).filter(Boolean).length;
+  const isCourseComplete =
+    modules.length > 0 && completedCount === modules.length;
 
   const formattedAuthor = formatAuthor(course.creator_id, course.author);
   const courseImage = getCourseImage(course, DEFAULT_IMAGES);
@@ -140,7 +155,10 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
                 src={courseImage}
                 alt={course.title}
                 fill
-                unoptimized={typeof courseImage === "string" && courseImage.startsWith("http")}
+                unoptimized={
+                  typeof courseImage === "string" &&
+                  courseImage.startsWith("http")
+                }
                 className="object-cover"
               />
             ) : (
@@ -237,9 +255,11 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
               <div className="divide-y divide-slate-200 border border-slate-200">
                 {modules.map((module, idx) => {
                   const modNumber = String(idx + 1).padStart(2, "0");
-                  const moduleId = module.module_id ?? module.id ?? (idx + 1);
+                  const moduleId = module.module_id ?? module.id ?? idx + 1;
                   const moduleLink = `/courses/${activeCourseId}/modules/${moduleId}`;
-                  const isCompleted = Boolean(completedModuleMap[String(moduleId)]);
+                  const isCompleted = Boolean(
+                    completedModuleMap[String(moduleId)],
+                  );
 
                   const content = (
                     <div
@@ -311,6 +331,10 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
               </div>
             )}
           </section>
+          <MintCourseButton
+            courseName={course.name}
+            userAddress={userAddress}
+          />
         </div>
 
         {/* Right Sidebar */}
@@ -323,7 +347,9 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
             <div className="space-y-3 text-xs">
               <div className="flex justify-between py-2 border-b border-slate-100">
                 <span className="text-slate-500 font-mono">Status</span>
-                <span className={`font-bold ${isEnrolled ? "text-emerald-700" : "text-[#0B0E14]"}`}>
+                <span
+                  className={`font-bold ${isEnrolled ? "text-emerald-700" : "text-[#0B0E14]"}`}
+                >
                   {isEnrolled ? "Enrolled" : "Not Enrolled"}
                 </span>
               </div>
@@ -339,12 +365,16 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
 
               <div className="flex justify-between py-2 border-b border-slate-100">
                 <span className="text-slate-500 font-mono">Total Modules</span>
-                <span className="font-bold text-[#0B0E14]">{modules.length}</span>
+                <span className="font-bold text-[#0B0E14]">
+                  {modules.length}
+                </span>
               </div>
 
               <div className="flex justify-between py-2">
                 <span className="text-slate-500 font-mono">Cost</span>
-                <span className="font-bold text-emerald-600 font-mono">Free</span>
+                <span className="font-bold text-emerald-600 font-mono">
+                  Free
+                </span>
               </div>
             </div>
           </div>
