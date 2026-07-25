@@ -196,7 +196,7 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
                 {modules.map((module, idx) => {
                   const modNumber = String(idx + 1).padStart(2, "0");
                   const moduleId = module.module_id ?? module.id ?? (idx + 1);
-                  const moduleLink = `/courses/${activeCourseId}/${moduleId}`;
+                  const moduleLink = `/courses/${activeCourseId}/modules/${moduleId}`;
 
                   const content = (
                     <div
