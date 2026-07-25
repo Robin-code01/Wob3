@@ -78,23 +78,28 @@ export default async function HomePage() {
         modules.map(async (mod) => {
           const modId = mod.module_id ?? mod.id;
           if (!modId) return false;
-          const res = await checkModuleCompletion(modId, userAddress, accessToken);
+          const res = await checkModuleCompletion(
+            modId,
+            userAddress,
+            accessToken,
+          );
           return Boolean(res.is_complete);
-        })
+        }),
       );
 
-      const isComplete = completionChecks.length > 0 && completionChecks.every(Boolean);
+      const isComplete =
+        completionChecks.length > 0 && completionChecks.every(Boolean);
       return { course, isComplete };
-    })
+    }),
   );
 
   // Separate active in-progress courses vs fully completed courses
   const inProgressCourses = enrolledWithStatus
-    .filter((item) => !item.isComplete)
+    .filter((item) => item && !item.isComplete && item.course)
     .map((item) => item.course);
 
   const completedCourses = enrolledWithStatus
-    .filter((item) => item.isComplete)
+    .filter((item) => item && item.isComplete && item.course)
     .map((item) => item.course);
 
   return (
@@ -168,7 +173,7 @@ export default async function HomePage() {
           <div className="flex gap-6 overflow-x-auto py-2 px-1 -mx-1 scrollbar-thin">
             {allCourses.map((course, idx) => {
               const courseId = course.course_id ?? course.id ?? idx;
-              
+
               const isEnrolled = enrolledCourses.some((c) => {
                 const cId = c.course_id ?? c.id ?? c.course;
                 return String(cId) === String(courseId);
@@ -206,7 +211,8 @@ export default async function HomePage() {
               No Courses Available
             </div>
             <p className="text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
-              There are no courses listed at the moment. Please check back later.
+              There are no courses listed at the moment. Please check back
+              later.
             </p>
           </div>
         )}
