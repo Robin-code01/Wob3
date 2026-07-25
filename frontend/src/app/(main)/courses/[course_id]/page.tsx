@@ -332,7 +332,7 @@ export default async function CourseOverviewPage({
             )}
           </section>
           <MintCourseButton
-            courseName={course.course_name}
+            courseName={course.title}
             userAddress={userAddress}
           />
         </div>
