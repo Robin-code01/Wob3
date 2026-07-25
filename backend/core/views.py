@@ -340,3 +340,53 @@ def submit_answer(request, section_id):
 
     return Response(AnswerSerializer(answer).data, status=201 if created else 200)
 
+
+@api_view(['POST'])
+def check_module_completion(request, module_id):
+    """
+    POST /modules/<module_id>/check_completion/
+    Checks whether the user has successfully answered all sections in this module.
+    Will eventually mint a partial soulbound token.
+
+    Body:
+        public_key (str): The user's public key.
+    """
+    public_key = request.data.get('public_key')
+    if not public_key:
+        return Response({'error': 'public_key is required'}, status=400)
+
+    try:
+        user = User.objects.get(public_key=public_key.lower())
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+    try:
+        module = Module.objects.get(module_id=module_id)
+    except Module.DoesNotExist:
+        return Response({'error': 'Module not found'}, status=404)
+
+    # Get all sections in this module
+    sections = module.sections.all()
+    if not sections.exists():
+        return Response({'error': 'Module has no sections'}, status=400)
+
+    # Check if the user has a correct answer for every section
+    for section in sections:
+        has_correct_answer = Answer.objects.filter(
+            user_id=user,
+            section_id=section,
+            is_correct=1
+        ).exists()
+        
+        if not has_correct_answer:
+            return Response({
+                'is_complete': False, 
+                'message': f'Incomplete or incorrect answer for section {section.section_id}'
+            }, status=200)
+
+    # All sections have correct answers
+    # TODO: Mint partial soulbound token here
+    return Response({
+        'is_complete': True, 
+        'message': 'Module complete. Token minting is a work in progress.'
+    }, status=200)
