@@ -83,7 +83,8 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
   const activeCourseId = String(course.course_id ?? course.id ?? course_id);
 
   const isEnrolled = enrolledCourses.some((c) => {
-    return String(c.course_id ?? c.id) === activeCourseId;
+    const enrolledId = c.course_id ?? c.id ?? c.course?.id ?? c.course;
+    return String(enrolledId) === activeCourseId;
   });
 
   const formattedAuthor = formatAuthor(course.creator_id, course.author);
@@ -194,31 +195,53 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
               <div className="divide-y divide-slate-200 border border-slate-200">
                 {modules.map((module, idx) => {
                   const modNumber = String(idx + 1).padStart(2, "0");
-                  return (
+                  const moduleId = module.module_id ?? module.id ?? (idx + 1);
+                  const moduleLink = `/courses/${activeCourseId}/modules/${moduleId}`;
+
+                  const content = (
                     <div
-                      key={module.module_id || module.id || idx}
-                      className="p-4 flex items-center justify-between gap-4 bg-white hover:bg-slate-50 transition-colors"
+                      className={`p-4 flex items-center justify-between gap-4 bg-white hover:bg-slate-50 transition-colors ${
+                        isEnrolled ? "group cursor-pointer" : ""
+                      }`}
                     >
                       <div className="flex items-center gap-4">
                         <span className="font-mono text-sm font-bold text-primary shrink-0">
                           {modNumber}
                         </span>
                         <div>
-                          <h3 className="font-bold text-sm text-[#0B0E14]">
+                          <h3 className="font-bold text-sm text-[#0B0E14] group-hover:text-primary transition-colors">
                             {module.title}
                           </h3>
                         </div>
                       </div>
 
                       {isEnrolled ? (
-                        <span className="font-mono text-xs text-primary font-semibold shrink-0">
-                          Available →
+                        <span className="font-mono text-xs text-primary font-semibold shrink-0 group-hover:translate-x-1 transition-transform">
+                          Start Module →
                         </span>
                       ) : (
                         <span className="font-mono text-xs text-slate-400 shrink-0">
                           Locked
                         </span>
                       )}
+                    </div>
+                  );
+
+                  if (isEnrolled) {
+                    return (
+                      <Link
+                        key={module.module_id || module.id || idx}
+                        href={moduleLink}
+                        className="block"
+                      >
+                        {content}
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <div key={module.module_id || module.id || idx}>
+                      {content}
                     </div>
                   );
                 })}
@@ -241,7 +264,7 @@ export default async function CourseOverviewPage({ params }: CourseOverviewPageP
             <div className="space-y-3 text-xs">
               <div className="flex justify-between py-2 border-b border-slate-100">
                 <span className="text-slate-500 font-mono">Status</span>
-                <span className="font-bold text-[#0B0E14]">
+                <span className={`font-bold ${isEnrolled ? "text-emerald-700" : "text-[#0B0E14]"}`}>
                   {isEnrolled ? "Enrolled" : "Not Enrolled"}
                 </span>
               </div>

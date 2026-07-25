@@ -4,7 +4,7 @@ interface KeyPoint {
 }
 
 interface TextLessonSectionProps {
-  title: string;
+  title?: string;
   subtitle?: string;
   content: string[]; // Pass paragraphs as an array of strings
   keyPoints?: KeyPoint[]; // Optional bullet points/takeaways
@@ -21,10 +21,12 @@ export default function TextLessonSection({
   return (
     <div className="flex flex-col gap-5 text-white">
       {/* Section Header */}
-      <div className="flex flex-col gap-1 border-b border-primary/40 pb-3">
-        <h3 className="text-2xl font-bold tracking-wide">{title}</h3>
-        {subtitle && <p className="text-sm text-white/80">{subtitle}</p>}
-      </div>
+      {title && (
+        <div className="flex flex-col gap-1 border-b border-primary/40 pb-3">
+          <h3 className="text-2xl font-bold tracking-wide">{title}</h3>
+          {subtitle && <p className="text-sm text-white/80">{subtitle}</p>}
+        </div>
+      )}
 
       {/* Main Paragraphs */}
       <div className="flex flex-col gap-3 text-base text-white/90 leading-relaxed font-normal">
