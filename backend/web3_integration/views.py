@@ -104,13 +104,32 @@ def _mint_module_completion_transaction(student: str, course_name: str, module_n
         gas_limit = 300000
 
     nonce = w3.eth.get_transaction_count(owner_address)
-    tx = func.buildTransaction({
+    
+    # Build base transaction dict
+    tx_dict = {
         "from": owner_address,
         "nonce": nonce,
         "gas": gas_limit,
-        "gasPrice": w3.eth.gas_price,
         "chainId": w3.eth.chain_id,
-    })
+    }
+    
+    # Check if network supports EIP-1559 (has maxPriorityFeePerGas)
+    try:
+        latest_block = w3.eth.get_block('latest')
+        if 'baseFeePerGas' in latest_block:
+            # EIP-1559 network
+            base_fee = latest_block['baseFeePerGas']
+            max_priority_fee = w3.eth.max_priority_fee
+            tx_dict["maxPriorityFeePerGas"] = max_priority_fee
+            tx_dict["maxFeePerGas"] = base_fee * 2 + max_priority_fee
+        else:
+            # Legacy network
+            tx_dict["gasPrice"] = w3.eth.gas_price
+    except Exception:
+        # Fallback to legacy gasPrice
+        tx_dict["gasPrice"] = w3.eth.gas_price
+    
+    tx = func.buildTransaction(tx_dict)
 
     signed = w3.eth.account.sign_transaction(tx, private_key=owner_key)
     tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
