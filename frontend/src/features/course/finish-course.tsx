@@ -40,7 +40,7 @@ export default function FinishCourseButton({
         : [];
 
       // 3. POST to Web3 register endpoint
-      const res = await fetch(`${backendUrl}/web3/register_course`, {
+      const res = await fetch(`${backendUrl}/web3/register_course/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

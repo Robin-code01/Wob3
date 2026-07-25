@@ -47,7 +47,7 @@ export default async function CreateSectionsPage({ params }: PageProps) {
         initialSections={initialSections}
         accessToken={accessToken}
       />
-      <Link href={`/courses/${course_id}/modules/create`}>
+      <Link href={`/courses/${course_id}/modules/create/`}>
         Create more MODULESSSS!
       </Link>
       <FinishCourseButton courseId={course_id} accessToken={accessToken} />
