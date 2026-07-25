@@ -83,7 +83,7 @@ def verify_signature(request):
 def _get_web3_and_contract():
     w3 = Web3(Web3.HTTPProvider(settings.WEB3_PROVIDER_URL))
     contract = w3.eth.contract(
-        address=Web3.toChecksumAddress(settings.COURSE_MODULE_SOULBOUND_ADDRESS),
+        address=Web3.to_checksum_address(settings.COURSE_MODULE_SOULBOUND_ADDRESS),
         abi=settings.COURSE_MODULE_SOULBOUND_ABI,
     )
     return w3, contract
@@ -91,7 +91,7 @@ def _get_web3_and_contract():
 
 def _mint_module_completion_transaction(student: str, course_name: str, module_name: str) -> str:
     w3, contract = _get_web3_and_contract()
-    owner_address = Web3.toChecksumAddress(settings.OWNER_ADDRESS)
+    owner_address = Web3.to_checksum_address(settings.OWNER_ADDRESS)
     owner_key = settings.OWNER_PRIVATE_KEY
 
     func = contract.functions.mintModuleCompletion(student, course_name, module_name)
