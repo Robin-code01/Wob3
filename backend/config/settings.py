@@ -126,14 +126,20 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+import os
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "https://your-frontend-domain.vercel.app",
+    "https://wob3.onrender.com",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
-import os
+# Allow CSRF from dev deployment
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "https://wob3.onrender.com",
+]
 
 WEB3_PROVIDER_URL = os.getenv("WEB3_PROVIDER_URL", "http://127.0.0.1:8545")
 COURSE_MODULE_SOULBOUND_ADDRESS = os.getenv("COURSE_MODULE_SOULBOUND_ADDRESS")
