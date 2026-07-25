@@ -291,11 +291,10 @@ def submit_answer(request, section_id):
     POST body:
         public_key  (str): The user's public key.
         user_answer (str): The answer provided by the user.
-        is_correct  (int): 0 or 1 (the frontend evaluates this based on the section's correct_answer).
+        is_correct  (int): Only used as a fallback for Coding_problem.
     """
     public_key = request.data.get('public_key')
     user_answer = request.data.get('user_answer')
-    is_correct = request.data.get('is_correct', 0)
 
     if not public_key or user_answer is None:
         return Response({'error': 'public_key and user_answer are required'}, status=400)
@@ -310,15 +309,85 @@ def submit_answer(request, section_id):
     except Section.DoesNotExist:
         return Response({'error': 'Section not found'}, status=404)
 
+    is_correct = 0
+
+    # Backend verification
+    if section.type_of_section == 'MCQ':
+        mcq = section.mcqs.first()
+        if mcq and str(user_answer).strip().lower() == str(mcq.correct_answer).strip().lower():
+            is_correct = 1
+    elif section.type_of_section == 'Blank':
+        blank = section.blanks.first()
+        if blank and str(user_answer).strip().lower() == str(blank.answers).strip().lower():
+            is_correct = 1
+    elif section.type_of_section == 'Coding_problem':
+        # TODO: Implement a secure backend code execution engine to run test cases.
+        # For now, we fallback to trusting the frontend for Coding Problems only.
+        is_correct = int(request.data.get('is_correct', 0))
+    else:
+        # For Info_panel and Video, answering doesn't necessarily have a "correct" state,
+        # but if we consider simply viewing it as correct:
+        is_correct = 1
+
     # Upsert the answer
     answer, created = Answer.objects.update_or_create(
         user_id=user,
         section_id=section,
         defaults={
             'user_answer': str(user_answer),
-            'is_correct': int(is_correct)
+            'is_correct': is_correct
         }
     )
 
     return Response(AnswerSerializer(answer).data, status=201 if created else 200)
 
+
+@api_view(['POST'])
+def check_module_completion(request, module_id):
+    """
+    POST /modules/<module_id>/check_completion/
+    Checks whether the user has successfully answered all sections in this module.
+    Will eventually mint a partial soulbound token.
+
+    Body:
+        public_key (str): The user's public key.
+    """
+    public_key = request.data.get('public_key')
+    if not public_key:
+        return Response({'error': 'public_key is required'}, status=400)
+
+    try:
+        user = User.objects.get(public_key=public_key.lower())
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+    try:
+        module = Module.objects.get(module_id=module_id)
+    except Module.DoesNotExist:
+        return Response({'error': 'Module not found'}, status=404)
+
+    # Get all sections in this module
+    sections = module.sections.all()
+    if not sections.exists():
+        return Response({'error': 'Module has no sections'}, status=400)
+
+    # Check if the user has a correct answer for every section
+    for section in sections:
+        has_correct_answer = Answer.objects.filter(
+            user_id=user,
+            section_id=section,
+            is_correct=1
+        ).exists()
+        
+        if not has_correct_answer:
+            return Response({
+                'is_complete': False, 
+                'message': f'Incomplete or incorrect answer for section {section.section_id}'
+            }, status=200)
+
+    # All sections have correct answers
+    # TODO: Mint partial soulbound token here
+    return Response({
+        'is_complete': True, 
+        'message': 'Module complete. Token minting is a work in progress.'
+    }, status=200)
