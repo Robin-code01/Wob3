@@ -3,6 +3,7 @@
 import QuizBox from "@/features/quiz/quiz-box";
 import QuizQuestion from "@/features/quiz/multiple-choice";
 import FillInTheBlankQuestion from "@/features/quiz/fill-in-the-blank";
+import VideoPlayerSection from "@/features/video/video";
 
 export default function QuizPage() {
   const sampleOptions = [
@@ -37,6 +38,13 @@ export default function QuizPage() {
         />
       </QuizBox>
       {/*I need to remember to make the answers get sent to the DB after every check of a question. Or if the answer is going to be sent all at once, the answers should be stored in a list and manipulated to be correctly stored in DB. What do you think?*/}
+      <QuizBox>
+        <VideoPlayerSection
+          title="Lesson 1: Introduction to Web3 & Smart Contracts"
+          description="Watch this short introduction before taking the module quiz below."
+          videoUrl="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        />
+      </QuizBox>
     </>
   );
 }
