@@ -20,7 +20,13 @@ export default async function CreateSectionsPage({ params }: PageProps) {
   }
 
   const { course_id, module_id } = await params;
-  const accessToken = (session as any)?.accessToken;
+  const accessToken = session?.accessToken;
+
+  if (!session?) {
+    console.error("AccessToken is missing or expired.");
+    // 必要に応じてリダイレクトやエラーハンドリング
+    redirect("/");
+  }
 
   let initialSections: any[] = [];
   try {

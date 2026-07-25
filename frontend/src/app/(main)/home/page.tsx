@@ -83,7 +83,7 @@ export default async function HomePage() {
             userAddress,
             accessToken,
           );
-          return Boolean(res.is_complete);
+          return Boolean(res?.is_complete);
         }),
       );
 
