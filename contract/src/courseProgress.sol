@@ -15,6 +15,7 @@ contract CourseProgressSoulbound is ERC721, Ownable {
 
     mapping(bytes32 => string) public courseNames;
     mapping(bytes32 => bytes32[]) private courseModules;
+    mapping(bytes32 => mapping(bytes32 => string)) public courseModuleNames;
     mapping(bytes32 => mapping(bytes32 => bool)) public courseModuleRequired;
 
     mapping(address => mapping(bytes32 => mapping(bytes32 => bool))) public moduleCompleted;
@@ -51,9 +52,10 @@ contract CourseProgressSoulbound is ERC721, Ownable {
         courseNames[courseId] = courseName;
 
         for (uint256 i = 0; i < moduleNames.length; i++) {
-            bytes32 moduleId = moduleNames[i];
+            bytes32 moduleId = _moduleId(moduleNames[i]);
             require(!courseModuleRequired[courseId][moduleId], "Duplicate module");
             courseModuleRequired[courseId][moduleId] = true;
+            courseModuleNames[courseId][moduleId] = moduleNames[i];
             courseModules[courseId].push(moduleId);
         }
 
@@ -66,7 +68,7 @@ contract CourseProgressSoulbound is ERC721, Ownable {
         string calldata moduleName
     ) external onlyOwner {
         bytes32 courseId = _courseId(courseName);
-        bytes32 moduleId = moduleName;
+        bytes32 moduleId = _moduleId(moduleName);
 
         require(bytes(courseNames[courseId]).length != 0, "Course not registered");
         require(courseModuleRequired[courseId][moduleId], "Module not part of course");
@@ -98,10 +100,13 @@ contract CourseProgressSoulbound is ERC721, Ownable {
 
     function getCourseModules(string calldata courseName) external view returns (string[] memory) {
         bytes32 courseId = _courseId(courseName);
+        require(bytes(courseNames[courseId]).length != 0, "Course not registered");
+
         uint256 count = courseModules[courseId].length;
         string[] memory names = new string[](count);
         for (uint256 i = 0; i < count; i++) {
-            names[i] = string(abi.encodePacked(courseModules[courseId][i]));
+            bytes32 moduleId = courseModules[courseId][i];
+            names[i] = courseModuleNames[courseId][moduleId];
         }
         return names;
     }
@@ -120,9 +125,9 @@ contract CourseProgressSoulbound is ERC721, Ownable {
         return keccak256(bytes(courseName));
     }
 
-    // function _moduleId(string memory moduleName) internal pure returns (bytes32) {
-    //     return keccak256(bytes(moduleName));
-    // }
+    function _moduleId(string memory moduleName) internal pure returns (bytes32) {
+        return keccak256(bytes(moduleName));
+    }
 
     function transferFrom(address, address, uint256) public pure override {
         revert("Soulbound: transfers disabled");
