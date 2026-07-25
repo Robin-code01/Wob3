@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 import { getModuleSections } from "@/lib/section/create";
 import ModuleSectionsManager from "@/features/section/create-sections";
+import Link from "next/link";
 
 interface PageProps {
   params: Promise<{
@@ -45,6 +46,9 @@ export default async function CreateSectionsPage({ params }: PageProps) {
         initialSections={initialSections}
         accessToken={accessToken}
       />
+      <Link href={`/courses/${course_id}/modules/create`}>
+        Create more MODULESSSS!
+      </Link>
     </div>
   );
 }
