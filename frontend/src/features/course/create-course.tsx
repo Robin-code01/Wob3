@@ -44,7 +44,7 @@ export default function CreateCourseForm({
     }
 
     try {
-      await createCourse(
+      const data = await createCourse(
         {
           title: formData.title,
           description: formData.description,
@@ -55,7 +55,7 @@ export default function CreateCourseForm({
       );
 
       // Revalidate and redirect back to homepage
-      router.push("/");
+      router.push(`/courses/${data?.course_id}/modules/1/1/edit`);
       router.refresh();
     } catch (err: any) {
       setError(err.message || "Something went wrong creating the course.");
