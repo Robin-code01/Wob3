@@ -17,7 +17,6 @@ interface ModuleSectionsManagerProps {
 }
 
 export default function ModuleSectionsManager({
-  courseId,
   moduleId,
   initialSections = [],
   accessToken,
@@ -148,8 +147,14 @@ export default function ModuleSectionsManager({
       setActiveSectionIdx(updated.length - 1);
       setDraftType(null);
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Failed to create section.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else if (typeof err === "string") {
+        setError(err);
+      } else {
+        setError("Failed to create section.");
+      }
     } finally {
       setLoading(false);
     }
@@ -179,16 +184,24 @@ export default function ModuleSectionsManager({
     }
   };
 
-  const getSectionTitle = (sec: SectionItem) => {
+  const getSectionTitle = (sec: SectionItem): string => {
     switch (sec.type_of_section) {
       case "Video":
         return "Video Lesson";
       case "MCQ":
-        return sec.question || "MCQ Quiz";
+        return typeof sec.question === "string" && sec.question.trim()
+          ? sec.question
+          : "MCQ Quiz";
       case "Info_panel":
-        return sec.content || "Information Panel";
+        return typeof sec.content === "string" && sec.content.trim()
+          ? sec.content
+          : "Information Panel";
       case "Blank":
-        return sec.content || "Fill in the Blank";
+        return typeof sec.content === "string" && sec.content.trim()
+          ? sec.content
+          : "Fill in the Blank";
+      default:
+        return "Section";
     }
   };
 
@@ -311,7 +324,7 @@ export default function ModuleSectionsManager({
       <main className="flex-1 p-6 md:p-8">
         {error && (
           <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 text-sm font-medium">
-            {error}
+            {typeof error === "string" ? error : JSON.stringify(error)}
           </div>
         )}
 
@@ -507,7 +520,7 @@ export default function ModuleSectionsManager({
               <div className="p-4 bg-slate-50 border border-slate-200 font-mono text-xs space-y-2">
                 <span className="font-bold text-slate-600">Video URL:</span>
                 <p className="text-blue-600 underline break-all">
-                  {activeSection.url}
+                  {String(activeSection.url || "")}
                 </p>
               </div>
             )}
@@ -515,29 +528,30 @@ export default function ModuleSectionsManager({
             {activeSection.type_of_section === "MCQ" && (
               <div className="p-4 bg-slate-50 border border-slate-200 space-y-4">
                 <p className="font-semibold text-sm text-[#0B0E14]">
-                  Q: {activeSection.question}
+                  Q: {String(activeSection.question || "")}
                 </p>
                 <div className="space-y-2">
-                  {activeSection.options?.map((opt, oIdx) => {
-                    const isCorrect = opt === activeSection.correct_answer;
-                    return (
-                      <div
-                        key={oIdx}
-                        className={`p-3 border text-xs font-mono flex items-center justify-between ${
-                          isCorrect
-                            ? "bg-emerald-50 border-emerald-500 text-emerald-900 font-bold"
-                            : "bg-white border-slate-200 text-slate-700"
-                        }`}
-                      >
-                        <span>{opt}</span>
-                        {isCorrect && (
-                          <span className="text-[10px] uppercase tracking-wide bg-emerald-600 text-white px-2 py-0.5 rounded-sm">
-                            Correct Answer
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {Array.isArray(activeSection.options) &&
+                    activeSection.options.map((opt, oIdx) => {
+                      const isCorrect = opt === activeSection.correct_answer;
+                      return (
+                        <div
+                          key={oIdx}
+                          className={`p-3 border text-xs font-mono flex items-center justify-between ${
+                            isCorrect
+                              ? "bg-emerald-50 border-emerald-500 text-emerald-900 font-bold"
+                              : "bg-white border-slate-200 text-slate-700"
+                          }`}
+                        >
+                          <span>{String(opt)}</span>
+                          {isCorrect && (
+                            <span className="text-[10px] uppercase tracking-wide bg-emerald-600 text-white px-2 py-0.5 rounded-sm">
+                              Correct Answer
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}
@@ -551,7 +565,7 @@ export default function ModuleSectionsManager({
                   </h4>
                 </div>
                 <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
-                  {activeSection.content}
+                  {String(activeSection.content || "")}
                 </p>
               </div>
             )}
@@ -563,7 +577,7 @@ export default function ModuleSectionsManager({
                     Fill in the Blank Sentence
                   </span>
                   <p className="text-base font-medium text-[#0B0E14] mt-1 leading-relaxed">
-                    {activeSection.content}
+                    {String(activeSection.content || "")}
                   </p>
                 </div>
 
@@ -572,7 +586,7 @@ export default function ModuleSectionsManager({
                     Expected Answer:
                   </span>
                   <span className="font-bold text-purple-900 bg-purple-100 px-2 py-0.5 border border-purple-300">
-                    {activeSection.answers}
+                    {String(activeSection.answers || "")}
                   </span>
                 </div>
               </div>
