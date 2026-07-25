@@ -1,3 +1,4 @@
+import json
 import re
 import secrets
 import time
@@ -14,6 +15,7 @@ from siwe import SiweMessage, generate_nonce
 from web3 import Web3
 from django.conf import settings
 from core.models import Module
+import os
 
 
 # Helper to recover signer from a message+signature
@@ -81,18 +83,18 @@ def verify_signature(request):
 
 
 def _get_web3_and_contract():
-    w3 = Web3(Web3.HTTPProvider(settings.WEB3_PROVIDER_URL))
+    w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URL")))
     contract = w3.eth.contract(
-        address=Web3.to_checksum_address(settings.COURSE_MODULE_SOULBOUND_ADDRESS),
-        abi=settings.COURSE_MODULE_SOULBOUND_ABI,
+        address=Web3.to_checksum_address(os.getenv("COURSE_MODULE_SOULBOUND_ADDRESS")),
+        abi=json.loads(os.getenv("COURSE_MODULE_SOULBOUND_ABI")),
     )
     return w3, contract
 
 
 def _mint_module_completion_transaction(student: str, course_name: str, module_name: str) -> str:
     w3, contract = _get_web3_and_contract()
-    owner_address = Web3.to_checksum_address(settings.OWNER_ADDRESS)
-    owner_key = settings.OWNER_PRIVATE_KEY
+    owner_address = Web3.to_checksum_address(os.getenv("OWNER_ADDRESS"))
+    owner_key = os.getenv("OWNER_PRIVATE_KEY")
 
     func = contract.functions.mintModuleCompletion(student, course_name, module_name)
     try:
